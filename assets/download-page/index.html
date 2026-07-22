@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Download VMForge — Linux wave-1 beta</title>
+<style>
+  /* Tokens from VMForge Visual Design System v1 (doc 019f8a53-2ce6-7c9a-9587-e6a7f250b962) */
+  :root{
+    --bg-canvas:#FFFFFF; --bg-surface:#F6F8FA; --bg-inset:#EAEDF1;
+    --fg-primary:#1A1D21; --fg-secondary:#57606A; --fg-on-accent:#FFFFFF;
+    --accent-fg:#0F62FE; --accent-emphasis:#0F62FE;
+    --border-default:#D0D7DE; --border-strong:#8C959F;
+    --radius-md:6px; --radius-lg:12px;
+    --font-ui:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,"SF Mono",Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg-canvas:#0D1117; --bg-surface:#161B22; --bg-inset:#010409;
+      --fg-primary:#E6EDF3; --fg-secondary:#9DA7B3;
+      --accent-fg:#58A6FF; --accent-emphasis:#1F6FEB;
+      --border-default:#30363D; --border-strong:#6E7681;
+    }
+  }
+  *{box-sizing:border-box;margin:0}
+  body{font-family:var(--font-ui);background:var(--bg-canvas);color:var(--fg-primary);
+       font-size:14px;line-height:1.5}
+  .wrap{max-width:880px;margin:0 auto;padding:0 24px}
+  code,pre{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+  pre{background:var(--bg-inset);border:1px solid var(--border-default);
+      border-radius:var(--radius-md);padding:12px 16px;overflow-x:auto;font-size:13px}
+
+  /* Hero */
+  .hero{padding:72px 0 56px;text-align:center}
+  .hero .mark{width:96px;height:96px;margin-bottom:24px}
+  .hero h1{font-size:34px;line-height:1.2;font-weight:700;letter-spacing:-0.01em}
+  .hero p.sub{font-size:17px;color:var(--fg-secondary);margin:12px auto 0;max-width:560px}
+  .hero .cta-row{display:flex;gap:12px;justify-content:center;margin-top:28px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 20px;
+       border-radius:var(--radius-md);font-weight:600;font-size:14px;text-decoration:none;
+       border:1px solid transparent}
+  .btn-primary{background:var(--accent-emphasis);color:var(--fg-on-accent)}
+  .btn-secondary{border-color:var(--border-strong);color:var(--fg-primary)}
+  .hero .meta{margin-top:12px;font-size:12px;color:var(--fg-secondary)}
+  .hero .meta code{background:none;padding:0}
+
+  /* Install section */
+  section{padding:40px 0;border-top:1px solid var(--border-default)}
+  h2{font-size:22px;font-weight:700;margin-bottom:8px}
+  .section-sub{color:var(--fg-secondary);margin-bottom:24px}
+  .install-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media (max-width:720px){.install-grid{grid-template-columns:1fr}}
+  .card{min-width:0;background:var(--bg-surface);border:1px solid var(--border-default);
+        border-radius:var(--radius-lg);padding:24px}
+  .card h3{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .badge{font-size:11px;font-weight:600;color:var(--accent-fg);
+         border:1px solid var(--accent-fg);border-radius:999px;padding:1px 8px}
+  .card p{color:var(--fg-secondary);margin:6px 0 14px;font-size:13px}
+  .card ol{margin:0 0 0 18px;padding:0;font-size:13px;color:var(--fg-secondary)}
+  .card ol li{margin-bottom:10px}
+  .card ol li strong{color:var(--fg-primary)}
+  .card pre{margin-top:6px}
+
+  /* GPG callout */
+  .verify{background:var(--bg-surface);border:1px solid var(--accent-fg);
+          border-left:4px solid var(--accent-fg);border-radius:var(--radius-md);
+          padding:20px 24px;margin-top:8px}
+  .verify h3{font-size:15px;font-weight:700;display:flex;gap:8px;align-items:center}
+  .verify p{color:var(--fg-secondary);font-size:13px;margin:6px 0 12px}
+  .verify .fpr{font-size:12px;color:var(--fg-secondary)}
+
+  footer{padding:32px 0 56px;border-top:1px solid var(--border-default);
+         color:var(--fg-secondary);font-size:12px;text-align:center}
+  footer a{color:var(--accent-fg);text-decoration:none}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <header class="hero">
+    <img class="mark" src="../icons/png/vmforge-256.png" alt="VMForge icon" width="96" height="96">
+    <h1>Snapshot your VMs like code.</h1>
+    <p class="sub">VMForge is a desktop virtualization tool with git-like snapshot
+       branching, instant resume and local-first privacy. Linux wave-1 beta is out now.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="#deb">&#8595;&nbsp;Download .deb</a>
+      <a class="btn btn-secondary" href="#appimage">&#8595;&nbsp;Download .AppImage</a>
+    </div>
+    <p class="meta">v0.1.0-beta &middot; x86-64 &middot; GPG-signed &middot; <code>SHA256SUMS</code> published with every release</p>
+  </header>
+
+  <!-- INSTALL -->
+  <section id="install">
+    <h2>Install</h2>
+    <p class="section-sub">Two packages, same app. Pick the one that matches how you manage software.</p>
+    <div class="install-grid">
+
+      <div class="card" id="deb">
+        <h3>.deb <span class="badge">Debian / Ubuntu</span></h3>
+        <p>Integrates with apt; installs the desktop entry and icons system-wide.</p>
+        <ol>
+          <li><strong>Download</strong> the package and its signature:
+            <pre>curl -LO https://github.com/Super-Submarine/vmforge/releases/latest/download/vmforge_amd64.deb</pre></li>
+          <li><strong>Verify</strong> (see below), then <strong>install</strong>:
+            <pre>sudo apt install ./vmforge_amd64.deb</pre></li>
+          <li><strong>Launch</strong> from your app grid, or run <code>vmforge</code>.</li>
+        </ol>
+      </div>
+
+      <div class="card" id="appimage">
+        <h3>.AppImage <span class="badge">Any distro</span></h3>
+        <p>Single portable file. No root, no install — runs on any modern Linux.</p>
+        <ol>
+          <li><strong>Download</strong>:
+            <pre>curl -LO https://github.com/Super-Submarine/vmforge/releases/latest/download/VMForge-x86_64.AppImage</pre></li>
+          <li><strong>Verify</strong> (see below), then <strong>make it executable</strong>:
+            <pre>chmod +x VMForge-x86_64.AppImage</pre></li>
+          <li><strong>Run it</strong>:
+            <pre>./VMForge-x86_64.AppImage</pre></li>
+        </ol>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- GPG VERIFICATION -->
+  <section id="verify">
+    <h2>Verify your download</h2>
+    <p class="section-sub">Every wave-1 artifact ships with a detached GPG signature and a signed <code>SHA256SUMS</code> file. Verification takes ~30 seconds.</p>
+    <div class="verify">
+      <h3>&#128274; Check the signature before installing</h3>
+      <p>Import the VMForge release key, then verify the checksum file and your artifact:</p>
+      <pre># 1. Import the release public key (also in the repo: keys/vmforge-release.asc)
+curl -L https://github.com/Super-Submarine/vmforge/releases/latest/download/vmforge-release.asc | gpg --import
+
+# 2. Verify the signed checksum manifest
+curl -LO https://github.com/Super-Submarine/vmforge/releases/latest/download/SHA256SUMS
+curl -LO https://github.com/Super-Submarine/vmforge/releases/latest/download/SHA256SUMS.asc
+gpg --verify SHA256SUMS.asc SHA256SUMS
+
+# 3. Check your artifact against the manifest
+sha256sum -c SHA256SUMS --ignore-missing</pre>
+      <p class="fpr">Expected: <code>Good signature from "VMForge Release Signing"</code>.
+      Key fingerprint: <code>[FINGERPRINT — filled in when VMFORGE_RELEASE_GPG_PRIVATE_KEY is provisioned]</code>.
+      If verification fails, do not install — report it.</p>
+    </div>
+  </section>
+
+  <footer>
+    VMForge wave-1 Linux beta &middot; <a href="https://github.com/Super-Submarine/vmforge">Source &amp; issues on GitHub</a>
+    &middot; Local-first: your VMs never leave your machine.
+  </footer>
+
+</div>
+</body>
+</html>
