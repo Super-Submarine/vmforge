@@ -37,9 +37,9 @@ VM manager — VM list with state, resources, snapshots, and lifecycle actions:
 
 ![VMForge VM manager](assets/screenshots/vmforge-gui-manager.png)
 
-Console — BookwormPup64 (Debian 12 base) live guest booted under QEMU/KVM, viewed through the VM's VNC display:
+Manager + console windowed on the host desktop — an Ubuntu 24.04 LTS desktop guest booted under QEMU/KVM, viewed through the VM's VNC display:
 
-![VMForge console running a Linux guest](assets/screenshots/vmforge-gui-console.png)
+![VMForge manager and console running an Ubuntu 24.04 guest](assets/screenshots/vmforge-gui-ubuntu-desktop.png)
 
 ### CLI
 
