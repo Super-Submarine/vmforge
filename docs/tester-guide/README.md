@@ -3,6 +3,10 @@
 Welcome to the VMForge private beta. Wave 1 is **Linux/KVM only** (macOS/Apple Silicon
 testers join in wave 2, gated on HVF snapshot parity).
 
+What's in this build and what's known-broken: **[release notes](../release-notes.md)**.
+Installing from a signed release instead of building from source:
+**[install & verification guide](install.md)**.
+
 Start here, in order:
 
 1. **[Linux quickstart](quickstart-linux.md)** — install prerequisites, verify KVM,
@@ -14,6 +18,9 @@ Start here, in order:
    maps to our P1/P2/P3 triage severity.
 4. **[Reporting bugs](reporting-bugs.md)** — how to file issues, which template to
    use, and the minimal diagnostics output to attach.
+5. **[GUI alpha user guide](gui-guide.md)** — the Tauri VM-manager preview:
+   launching it, one-click VM creation, the console viewer, what is stubbed vs.
+   real, and a CLI ↔ GUI feature-parity table with CLI fallbacks.
 
 ## Severity rubric (used everywhere in this guide)
 

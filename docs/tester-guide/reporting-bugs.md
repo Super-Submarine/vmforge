@@ -24,7 +24,9 @@ Diagnostics are **opt-in only** — nothing is ever uploaded automatically. Wave
 is self-report: the minimal diagnostic bundle is the output below, pasted into
 the "Logs / diagnostics" field of the bug template.
 
-The `vmforge diagnose` subcommand ships with the M1 CLI. Until it lands, this
+The `vmforge diagnose` subcommand is in flight (PR
+[#17](https://github.com/Super-Submarine/vmforge/pull/17)) and **experimental**
+under the [CLI freeze](../cli-freeze-v1.0-beta.md). Until it lands, this
 copy-paste block produces the same minimal output:
 
 ```sh

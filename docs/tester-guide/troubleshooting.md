@@ -103,7 +103,9 @@ fix doesn't work. Severity rubric: see the [tester guide](README.md#severity-rub
 - **Fix:** make sure the guest service listens on `0.0.0.0`, not only
   `127.0.0.1`; user-mode NAT forwards bind host `127.0.0.1` by default, so they
   are reachable from the host only — that is by design in v0. ICMP (`ping`)
-  does not work through user-mode NAT; test with TCP.
+  does not work through user-mode NAT; test with TCP. Bridged/TAP networking
+  (guest addressable from the LAN) is **not implemented yet** — it exists only
+  as a design (`networking/DESIGN.md`); don't file its absence as a bug.
 - **Severity:** documented NAT limitations = not a bug; a forward that matches
   the docs but doesn't work = **P2**.
 
@@ -120,6 +122,17 @@ not downloaded again.
 **Q: Where are logs?**
 Serial console logs from the smoke suite: `qa/smoke/.work/serial-*.log`. QEMU
 errors print to stderr of whatever launched it.
+
+**Q: How do I find my VM's IP address / run commands inside the guest / shut it down gracefully?**
+Guest tools (`vmforgectl` + the `vmforge-ga` agent, over virtio-serial) provide
+`net-info` (guest IP), `exec`, and graceful `shutdown` with a hard-stop
+fallback — but they are still in an open PR (#4), not on `main`. Until they
+land: get the IP from inside the guest (`ip addr` on the serial console), and
+shut down from inside the guest (`poweroff`).
+
+**Q: Can I use bridged networking so the VM is reachable from my LAN?**
+Not yet. Only user-mode NAT (host-only-reachable port forwards) exists;
+bridged/TAP is design-only (`networking/DESIGN.md`).
 
 **Q: Can I test on macOS?**
 Not in wave 1. macOS/HVF joins wave 2, gated on HVF snapshot parity.

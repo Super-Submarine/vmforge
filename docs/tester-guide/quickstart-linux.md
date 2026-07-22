@@ -19,7 +19,9 @@ sudo dnf install -y qemu-system-x86 qemu-img genisoimage python3 curl git
 ```
 
 You also need a Rust toolchain to build the CLI (until packaged binaries ship):
-https://rustup.rs — then `rustup default stable`.
+https://rustup.rs — then `rustup default stable`. If a signed `.deb`/`.AppImage`
+release has been published for your wave, you can install that instead — see
+the [install & verification guide](install.md).
 
 ## 2. Verify KVM (do this before anything else)
 
@@ -105,9 +107,23 @@ qemu-img snapshot -l mydisk.qcow2     # list snapshot tags on a disk
 qemu-img check mydisk.qcow2           # verify disk integrity
 ```
 
+For managed disks and git-like **offline snapshot trees** (create / branch /
+revert / delete, VM powered off), use the `vmforge-storage` CLI shipped on
+`main` — see the [CLI reference](cli-reference.md#vmforge-storage--qcow2-disks--snapshot-trees-shipped-on-main):
+
+```sh
+cd storage && pip install -e .
+vmforge-storage create demo root 10G
+vmforge-storage snapshot create demo root clean-install
+vmforge-storage tree demo root        # * marks the current base
+```
+
 Lifecycle verbs (`vmforge create/start/snapshot/restore/stop`) land with the M1
 merge — see the [CLI reference](cli-reference.md) for what is shipped today vs.
-arriving at M1.
+still in open PRs (engine verbs, `vmforge-net` networking, `vmforgectl` guest
+tools). Curious about the desktop app? See the
+[GUI alpha user guide](gui-guide.md) — it is a UX preview, not yet wired to
+real VMs.
 
 ## 6. What to do next
 
