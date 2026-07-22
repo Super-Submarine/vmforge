@@ -1,0 +1,69 @@
+name: Beta feedback / friction
+description: Non-bug feedback from beta testing — friction points, UX paper cuts, feature requests, workflow gaps.
+title: "[Feedback]: "
+labels: ["feedback", "beta", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for anything that isn't a defect: friction ("this almost made me stop"),
+        missing capabilities, or suggestions. Paper cuts are batched weekly (P3 rubric);
+        if a golden-path step actually *fails*, file a bug report instead.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Feedback type
+      options:
+        - Friction — something slowed me down or almost made me stop
+        - Feature request — something I need that's missing
+        - UX / polish suggestion
+        - Docs gap
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Product area
+      description: Maps to PRD features F1–F5 for weekly clustering.
+      options:
+        - VM create / first boot (F1)
+        - Instant resume / pause (F2)
+        - Snapshots & branching (F3)
+        - CLI (F4)
+        - Install / packaging / cross-host (F5)
+        - Other / not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: host-platform
+    attributes:
+      label: Host platform
+      options:
+        - macOS on Apple Silicon
+        - Linux x86_64 with KVM
+        - Linux ARM64 with KVM
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: feedback
+    attributes:
+      label: What's the feedback?
+      description: What were you trying to do, and what got in the way (or what would make it better)?
+    validations:
+      required: true
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Current workaround (if any)
+  - type: dropdown
+    id: severity-self
+    attributes:
+      label: How much does this matter to you?
+      options:
+        - Blocker — I'd stop using VMForge over this
+        - Major — significant friction in my weekly workflow
+        - Minor — annoying but I can live with it
+    validations:
+      required: true

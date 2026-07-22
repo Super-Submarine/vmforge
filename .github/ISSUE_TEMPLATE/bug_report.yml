@@ -1,0 +1,92 @@
+name: Beta bug report
+description: Report a bug found while testing the VMForge beta. Every UAT/AT FAIL should be filed with its step ID.
+title: "[Bug]: "
+labels: ["bug", "beta", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing VMForge! Fill in as much as you can — host details and the step ID
+        let us reproduce quickly. Severity is assigned at daily triage; if you hit **data loss,
+        a snapshot-restore failure, or a crash of a running VM**, say so clearly — those are P1
+        and acknowledged in under 24 hours.
+  - type: input
+    id: version
+    attributes:
+      label: VMForge version
+      description: Output of `vmforge --version` (or build/tag from your download page).
+      placeholder: vmforge 0.x.y (build abc1234)
+    validations:
+      required: true
+  - type: dropdown
+    id: host-platform
+    attributes:
+      label: Host platform
+      options:
+        - macOS on Apple Silicon (M1/M2/M3/M4)
+        - Linux x86_64 with KVM
+        - Linux ARM64 with KVM
+        - Other (describe below)
+    validations:
+      required: true
+  - type: input
+    id: host-os-version
+    attributes:
+      label: Host OS version
+      placeholder: "macOS 14.5 / Ubuntu 24.04, kernel 6.8"
+    validations:
+      required: true
+  - type: input
+    id: guest
+    attributes:
+      label: Guest OS / image
+      placeholder: "Ubuntu 24.04 server ARM64"
+  - type: input
+    id: step-id
+    attributes:
+      label: UAT/AT step ID (if from a test script)
+      description: e.g. AT-3.2 or UAT-6.1. Every scripted FAIL must carry its step ID.
+      placeholder: AT-4.3
+  - type: dropdown
+    id: impact
+    attributes:
+      label: What happened (impact class)
+      description: Used for triage against the severity ladder (P1/P2/P3).
+      options:
+        - Data loss, snapshot-restore failure, or crash of a running VM (P1 class)
+        - A golden-path step (UAT/AT) fails but I can recover (P2 class)
+        - Paper cut / UX annoyance / cosmetic (P3 class)
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, what actually happened?
+      placeholder: |
+        1. Created a VM with `vmforge create ...`
+        2. Took a snapshot, then restored it
+        3. Expected the VM to resume; instead ...
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Exact commands or clicks, minimal case if you can.
+      render: shell
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics output
+      description: >-
+        Paste the output of `vmforge diagnose` (redact anything you consider private —
+        nothing is collected automatically; you control what you attach).
+      render: text
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Crash logs or console output, if any.
+      render: text

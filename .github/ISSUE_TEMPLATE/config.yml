@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Beta chat channel
+    url: https://github.com/Super-Submarine/vmforge/blob/main/docs/beta-triage.md
+    about: Quick questions and support during the beta. Chat is not the system of record — anything actionable is promoted to an issue within 24h.
+  - name: Security issue
+    url: https://github.com/Super-Submarine/vmforge/security/advisories/new
+    about: Report security vulnerabilities privately, not as public issues.
