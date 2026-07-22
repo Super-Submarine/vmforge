@@ -63,8 +63,11 @@ listing) in the smoke suite.
 | F8 Out-of-space during snapshot | Small tmpfs backing dir | Graceful failure, image not corrupted |
 
 Automated today: F2, F3 (mid-boot variant + relaunch), F6, and F1 (header corruption)
-in `qa/smoke/smoke_test.sh --negative`. F5/F7/F8 are manual until the VMForge CLI
-gives us stable error codes to assert on.
+in `qa/smoke/smoke_test.sh --negative`. F7 (double-boot/lock) and F8 (out-of-space
+during savevm) plus crash-mid-run, truncated-snapshot, invalid-config and
+deleted-branch-restore cases are automated in `qa/failure/failure_suite.sh`
+(QA v2, nightly — see `docs/ci.md` § qa-extended). F5 stays manual until the
+VMForge CLI gives us stable error codes to assert on.
 
 ## 3. CI budget & flakiness (initial observations)
 

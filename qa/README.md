@@ -1,7 +1,9 @@
 # VMForge QA
 
 - `TEST_PLAN.md` — MVP test matrix (create/boot/stop/snapshot/restore × images × accelerators × failure cases).
-- `smoke/` — automated smoke suite, wired into CI via `.github/workflows/qa-smoke.yml`.
+- `smoke/` — automated smoke suite, wired into per-PR CI via `.github/workflows/qa-smoke.yml`.
+- `failure/` — QA v2 negative/failure-mode suite (crash, disk-full, corrupt snapshot, invalid config, double-boot, deleted-branch restore); nightly via `.github/workflows/qa-extended.yml`.
+- `integration/` — subsystem integration tests (networking hostfwd, guest-agent ping/exec); skip-with-reason until PRs #2/#4 merge.
 
 ## Running the smoke suite
 
@@ -12,8 +14,25 @@ qa/smoke/smoke_test.sh --negative     # failure cases (corrupt disk, missing ima
 FORCE_TCG=1 qa/smoke/smoke_test.sh    # force TCG even when /dev/kvm exists
 ```
 
-Accelerator selection: KVM is used automatically when `/dev/kvm` exists and is
-writable; otherwise TCG. `FORCE_TCG=1` overrides.
+## Cross-backend matrix
+
+Backend selection is parameterized via `BACKEND` (implemented in the driver, so new
+backends slot in by extending `qa/smoke/drivers/`):
+
+| `BACKEND` | Meaning |
+|-----------|---------|
+| `auto` (default) | KVM when `/dev/kvm` is writable, else TCG — x86_64 |
+| `kvm` | Require KVM — x86_64 |
+| `tcg` | Force TCG — x86_64 (`FORCE_TCG=1` is a back-compat alias) |
+| `tcg-aarch64` | TCG-emulated aarch64 (`qemu-system-aarch64 -machine virt`) — the CI stand-in for the macOS HVF/ARM backend until macOS runners are wired up. Needs `qemu-system-arm` + `qemu-efi-aarch64`. |
+
+All suites (`smoke_test.sh`, `smoke_test.sh --negative`, `failure/failure_suite.sh`)
+honor `BACKEND` and pick an arch-appropriate default guest image.
+
+```bash
+BACKEND=tcg-aarch64 BOOT_TIMEOUT=1500 qa/smoke/smoke_test.sh   # ARM path (slow under TCG)
+BACKEND=auto qa/failure/failure_suite.sh                        # failure modes under KVM
+```
 
 Environment overrides:
 

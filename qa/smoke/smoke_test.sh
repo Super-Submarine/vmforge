@@ -5,7 +5,6 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-GUEST_IMAGE_URL="${GUEST_IMAGE_URL:-https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/cloud/nocloud_alpine-3.20.3-x86_64-bios-cloudinit-r0.qcow2}"
 BOOT_TIMEOUT="${BOOT_TIMEOUT:-300}"
 WORKDIR="${WORKDIR:-$SCRIPT_DIR/.work}"
 VM_MEM="${VM_MEM:-512}"
@@ -18,6 +17,14 @@ export WORKDIR SERIAL_LOG SCRIPT_DIR VM_MEM
 
 # shellcheck source=drivers/qemu.sh
 source "$SCRIPT_DIR/drivers/$DRIVER.sh"
+
+_default_image_url() {
+    case "$(vm_arch)" in
+        aarch64) echo "https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/cloud/nocloud_alpine-3.20.3-aarch64-uefi-cloudinit-r0.qcow2" ;;
+        *) echo "https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/cloud/nocloud_alpine-3.20.3-x86_64-bios-cloudinit-r0.qcow2" ;;
+    esac
+}
+GUEST_IMAGE_URL="${GUEST_IMAGE_URL:-$(_default_image_url)}"
 
 PASS=0; FAIL=0
 step()   { echo; echo "==> $*"; }
@@ -96,7 +103,7 @@ happy_path() {
 
 negative_cases() {
     step "F2: boot with missing disk image must fail fast"
-    if qemu-system-x86_64 -accel tcg -display none \
+    if qemu_oneshot \
         -drive "file=$WORKDIR/does-not-exist.qcow2,if=virtio,format=qcow2" \
         > /dev/null 2>&1; then
         fail "QEMU started with a missing image"
@@ -108,7 +115,7 @@ negative_cases() {
     local bad="$WORKDIR/corrupt.qcow2"
     qemu-img create -q -f qcow2 "$bad" 64M
     printf 'GARBAGE!' | dd of="$bad" bs=1 seek=0 conv=notrunc status=none
-    if qemu-system-x86_64 -accel tcg -display none \
+    if qemu_oneshot \
         -drive "file=$bad,if=virtio,format=qcow2" > /dev/null 2>&1; then
         fail "QEMU booted a corrupt image"
     else

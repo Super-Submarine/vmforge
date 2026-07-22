@@ -15,6 +15,21 @@ Boot + snapshot/restore smoke suite (`qa/smoke/smoke_test.sh`), two-job matrix o
 
 Serial logs are uploaded as artifacts on every run.
 
+## `qa-extended.yml` (nightly, not per-PR)
+QA v2 beta-readiness suite, scheduled nightly (02:30 UTC) + `workflow_dispatch`. Kept
+out of the per-PR fast path on purpose (slow TCG/aarch64 boots, long failure cases):
+
+- **matrix-smoke** — the smoke suite across the full backend matrix: `auto` (KVM),
+  `tcg`, and `tcg-aarch64` (TCG-emulated ARM, the CI stand-in for the HVF backend;
+  see `qa/README.md` § Cross-backend matrix). New backends are added as matrix rows.
+- **failure-suite** — `qa/failure/failure_suite.sh` (crash mid-run, disk-full during
+  snapshot, corrupt/truncated snapshot, invalid config, double-boot, deleted-branch
+  restore) on the same backend matrix; every case asserts clean errors, no orphaned
+  QEMU processes, and an uncorrupted state dir.
+- **integration** — `qa/integration/net_hostfwd_test.sh` (hostfwd reachability via
+  `vmforge-net`) and `qa/integration/guest_agent_test.sh` (agent ping/exec); both
+  skip with a reason until PRs #2/#4 merge, then activate automatically.
+
 ## Full KVM smoke (M1 gate)
 The M1 exit criterion is the smoke sequence green **under KVM** twice in a row from a fresh checkout of `main`:
 

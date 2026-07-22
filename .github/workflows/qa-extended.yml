@@ -1,0 +1,147 @@
+name: QA extended (nightly)
+
+# Beta-readiness extended suite: full cross-backend matrix + failure-mode suite
+# + subsystem integration tests. Deliberately NOT run per-PR — the per-PR fast
+# path stays qa-smoke.yml + ci.yml. Runs nightly and on demand.
+
+on:
+  schedule:
+    - cron: '30 2 * * *' # nightly, 02:30 UTC
+  workflow_dispatch:
+
+jobs:
+  matrix-smoke:
+    name: smoke (${{ matrix.backend }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - backend: auto # KVM when the runner exposes /dev/kvm, else TCG
+            packages: qemu-system-x86
+            boot_timeout: '300'
+          - backend: tcg # KVM-less x86_64 path
+            packages: qemu-system-x86
+            boot_timeout: '300'
+          - backend: tcg-aarch64 # TCG-emulated aarch64 — CI stand-in for the HVF/ARM path
+            packages: qemu-system-arm qemu-efi-aarch64
+            boot_timeout: '1500'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install QEMU
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q ${{ matrix.packages }} qemu-utils genisoimage
+
+      - name: Enable KVM access
+        if: matrix.backend == 'auto'
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod a+rw /dev/kvm; fi
+
+      - name: Cache guest image
+        uses: actions/cache@v4
+        with:
+          path: qa/smoke/.work/*.qcow2
+          key: guest-image-alpine-3.20.3-${{ matrix.backend == 'tcg-aarch64' && 'aarch64' || 'x86_64' }}
+
+      - name: Smoke test (boot + snapshot/restore)
+        env:
+          BACKEND: ${{ matrix.backend }}
+          BOOT_TIMEOUT: ${{ matrix.boot_timeout }}
+        run: qa/smoke/smoke_test.sh
+
+      - name: Negative cases
+        env:
+          BACKEND: ${{ matrix.backend }}
+          BOOT_TIMEOUT: ${{ matrix.boot_timeout }}
+        run: qa/smoke/smoke_test.sh --negative
+
+      - name: Upload serial logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: extended-smoke-serial-logs-${{ matrix.backend }}
+          path: qa/smoke/.work/serial-*.log
+          if-no-files-found: ignore
+
+  failure-suite:
+    name: failure modes (${{ matrix.backend }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - backend: auto
+            packages: qemu-system-x86
+            boot_timeout: '300'
+          - backend: tcg
+            packages: qemu-system-x86
+            boot_timeout: '300'
+          - backend: tcg-aarch64
+            packages: qemu-system-arm qemu-efi-aarch64
+            boot_timeout: '1500'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install QEMU
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q ${{ matrix.packages }} qemu-utils genisoimage
+
+      - name: Enable KVM access
+        if: matrix.backend == 'auto'
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod a+rw /dev/kvm; fi
+
+      - name: Cache guest image
+        uses: actions/cache@v4
+        with:
+          path: qa/failure/.work/*.qcow2
+          key: guest-image-alpine-3.20.3-failure-${{ matrix.backend == 'tcg-aarch64' && 'aarch64' || 'x86_64' }}
+
+      - name: Failure-mode suite
+        env:
+          BACKEND: ${{ matrix.backend }}
+          BOOT_TIMEOUT: ${{ matrix.boot_timeout }}
+        run: qa/failure/failure_suite.sh
+
+      - name: Upload serial logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-suite-serial-logs-${{ matrix.backend }}
+          path: qa/failure/.work/serial-*.log
+          if-no-files-found: ignore
+
+  integration:
+    name: integration (networking + guest-agent)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install QEMU
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q qemu-system-x86 qemu-utils genisoimage
+
+      - name: Enable KVM access
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod a+rw /dev/kvm; fi
+
+      - name: Networking hostfwd reachability (skips until PR "#2" merges)
+        run: qa/integration/net_hostfwd_test.sh
+
+      - name: Guest agent ping/exec (skips until PR "#4" merges)
+        run: qa/integration/guest_agent_test.sh
+
+      - name: Upload serial logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-serial-logs
+          path: qa/integration/.work/serial-*.log
+          if-no-files-found: ignore

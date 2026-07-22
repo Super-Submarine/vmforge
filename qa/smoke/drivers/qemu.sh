@@ -1,22 +1,83 @@
 # shellcheck shell=bash
-# Default driver: plain qemu-system-x86_64 controlled over QMP.
+# Default driver: plain qemu-system-* controlled over QMP.
 # Implements the driver interface documented in qa/README.md.
+#
+# Backend selection (cross-backend matrix): set BACKEND to one of
+#   auto        (default) KVM if /dev/kvm is writable, else TCG — x86_64
+#   kvm         require KVM — x86_64 (fails if /dev/kvm is unavailable)
+#   tcg         force TCG — x86_64
+#   tcg-aarch64 TCG-emulated aarch64 (the CI stand-in for the HVF/ARM path)
+# FORCE_TCG=1 is kept as a back-compat alias for BACKEND=tcg.
 
-QEMU_BIN="${QEMU_BIN:-qemu-system-x86_64}"
+BACKEND="${BACKEND:-auto}"
+if [[ "${FORCE_TCG:-0}" == "1" && "$BACKEND" == "auto" ]]; then
+    BACKEND=tcg
+fi
+
 QEMU_PID=""
 QMP_SOCK=""
 DISK=""
 
-_accel_args() {
-    if [[ "${FORCE_TCG:-0}" != "1" && -w /dev/kvm ]]; then
-        echo "-accel kvm"
+vm_arch() {
+    case "$BACKEND" in
+        tcg-aarch64) echo aarch64 ;;
+        *) echo x86_64 ;;
+    esac
+}
+
+qemu_bin() {
+    if [[ -n "${QEMU_BIN:-}" ]]; then
+        echo "$QEMU_BIN"
     else
-        echo "-accel tcg"
+        echo "qemu-system-$(vm_arch)"
     fi
 }
 
+_aarch64_fw() {
+    local f
+    for f in "${AARCH64_FW:-}" \
+        /usr/share/qemu-efi-aarch64/QEMU_EFI.fd \
+        /usr/share/AAVMF/AAVMF_CODE.fd; do
+        [[ -n "$f" && -r "$f" ]] && { echo "$f"; return 0; }
+    done
+    echo "no aarch64 UEFI firmware found (install qemu-efi-aarch64)" >&2
+    return 1
+}
+
+_machine_args() {
+    case "$BACKEND" in
+        tcg-aarch64)
+            local fw
+            fw="$(_aarch64_fw)" || return 1
+            echo "-machine virt -cpu cortex-a57 -bios $fw"
+            ;;
+        *)
+            echo "-machine q35"
+            ;;
+    esac
+}
+
+_accel_args() {
+    case "$BACKEND" in
+        kvm) echo "-accel kvm" ;;
+        tcg | tcg-aarch64) echo "-accel tcg" ;;
+        auto)
+            if [[ -w /dev/kvm ]]; then echo "-accel kvm"; else echo "-accel tcg"; fi
+            ;;
+        *)
+            echo "unknown BACKEND: $BACKEND" >&2
+            return 1
+            ;;
+    esac
+}
+
 accel_name() {
-    if [[ "${FORCE_TCG:-0}" != "1" && -w /dev/kvm ]]; then echo kvm; else echo tcg; fi
+    case "$BACKEND" in
+        kvm) echo kvm ;;
+        tcg) echo tcg ;;
+        tcg-aarch64) echo "tcg (aarch64)" ;;
+        auto) if [[ -w /dev/kvm ]]; then echo kvm; else echo tcg; fi ;;
+    esac
 }
 
 vm_create() {
@@ -27,19 +88,26 @@ vm_create() {
 }
 
 vm_boot() {
-    # shellcheck disable=SC2046
-    "$QEMU_BIN" \
-        $(_accel_args) \
+    # shellcheck disable=SC2046,SC2086
+    "$(qemu_bin)" \
+        $(_accel_args) $(_machine_args) \
         -m "${VM_MEM:-512}" -smp 1 \
-        -machine q35 \
         -drive "file=$DISK,if=virtio,format=qcow2" \
         -drive "file=$SEED_ISO,if=virtio,format=raw,media=cdrom,read-only=on" \
         -netdev user,id=n0 -device virtio-net-pci,netdev=n0 \
         -display none \
         -serial "file:$SERIAL_LOG" \
         -qmp "unix:$QMP_SOCK,server,nowait" \
+        ${VM_EXTRA_ARGS:-} \
         &
     QEMU_PID=$!
+}
+
+# Run a one-shot QEMU invocation (no QMP, no lifecycle) with the backend's
+# accel/machine args plus the given extra args. Used by negative tests.
+qemu_oneshot() {
+    # shellcheck disable=SC2046
+    "$(qemu_bin)" $(_accel_args) $(_machine_args) -display none "$@"
 }
 
 vm_wait_ready() {
@@ -77,6 +145,8 @@ vm_restore() { _hmp_strict "loadvm $1"; }
 vm_query_status() { _qmp query-status; }
 
 vm_list_snapshots() { _qmp human-monitor-command "info snapshots"; }
+
+vm_delete_snapshot() { _hmp_strict "delvm $1"; }
 
 vm_stop() {
     _qmp system_powerdown > /dev/null || true
