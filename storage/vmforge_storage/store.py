@@ -33,13 +33,19 @@ _NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 
 
 class StorageError(RuntimeError):
-    pass
+    """Storage failure with a stable machine-readable error code
+    (contract §1: not_found | already_exists | invalid_config | invalid_state)."""
+
+    def __init__(self, message: str, *, code: str) -> None:
+        super().__init__(message)
+        self.code = code
 
 
 def _validate_name(kind: str, name: str) -> str:
     if not _NAME_RE.match(name):
         raise StorageError(
-            f"invalid {kind} name {name!r}: use letters, digits, '.', '_', '-'"
+            f"invalid {kind} name {name!r}: use letters, digits, '.', '_', '-'",
+            code="invalid_config",
         )
     return name
 
@@ -83,7 +89,7 @@ class DiskStore:
     def _require_disk(self, vm: str, disk: str) -> Path:
         path = self.disk_path(vm, disk)
         if not path.exists():
-            raise StorageError(f"disk not found: {path}")
+            raise StorageError(f"disk not found: {path}", code="not_found")
         return path
 
     # ---- disk lifecycle -------------------------------------------------
@@ -98,7 +104,7 @@ class DiskStore:
     ) -> Path:
         path = self.disk_path(vm, disk)
         if path.exists():
-            raise StorageError(f"disk already exists: {path}")
+            raise StorageError(f"disk already exists: {path}", code="already_exists")
         path.parent.mkdir(parents=True, exist_ok=True)
         qemu_img.create_qcow2(
             path, size, preallocation=preallocation, cluster_size=cluster_size
@@ -120,10 +126,10 @@ class DiskStore:
         a shared base image under images/."""
         src = Path(src)
         if not src.exists():
-            raise StorageError(f"source image not found: {src}")
+            raise StorageError(f"source image not found: {src}", code="not_found")
         dst = self.images_dir / f"{_validate_name('image', name)}.qcow2"
         if dst.exists():
-            raise StorageError(f"image already exists: {dst}")
+            raise StorageError(f"image already exists: {dst}", code="already_exists")
         self.images_dir.mkdir(parents=True, exist_ok=True)
         qemu_img.convert(src, dst, src_format=src_format, compress=compress)
         return dst
@@ -139,10 +145,10 @@ class DiskStore:
         """Convert an existing image directly into a VM's active disk."""
         src = Path(src)
         if not src.exists():
-            raise StorageError(f"source image not found: {src}")
+            raise StorageError(f"source image not found: {src}", code="not_found")
         dst = self.disk_path(vm, disk)
         if dst.exists():
-            raise StorageError(f"disk already exists: {dst}")
+            raise StorageError(f"disk already exists: {dst}", code="already_exists")
         dst.parent.mkdir(parents=True, exist_ok=True)
         qemu_img.convert(src, dst, src_format=src_format)
         return dst
@@ -166,11 +172,11 @@ class DiskStore:
             if candidate.exists():
                 base_path = candidate
             else:
-                raise StorageError(f"base image not found: {base}")
+                raise StorageError(f"base image not found: {base}", code="not_found")
         base_info = qemu_img.info(base_path)[0]
         dst = self.disk_path(vm, disk)
         if dst.exists():
-            raise StorageError(f"disk already exists: {dst}")
+            raise StorageError(f"disk already exists: {dst}", code="already_exists")
         dst.parent.mkdir(parents=True, exist_ok=True)
         qemu_img.create_qcow2(
             dst,
@@ -185,7 +191,8 @@ class DiskStore:
         snap_dir = self.snapshot_dir(vm, disk)
         if snap_dir.exists() and any(snap_dir.iterdir()) and not force:
             raise StorageError(
-                f"disk {disk!r} has snapshots; delete them first or use force"
+                f"disk {disk!r} has snapshots; delete them first or use force",
+                code="invalid_state",
             )
         path.unlink()
         if snap_dir.exists():
@@ -212,7 +219,7 @@ class DiskStore:
         active = self._require_disk(vm, disk)
         snap_path = self.snapshot_path(vm, disk, name)
         if snap_path.exists():
-            raise StorageError(f"snapshot already exists: {snap_path}")
+            raise StorageError(f"snapshot already exists: {snap_path}", code="already_exists")
         snap_path.parent.mkdir(parents=True, exist_ok=True)
 
         active_info = qemu_img.info(active)[0]
@@ -272,7 +279,10 @@ class DiskStore:
         for snap in self.snapshot_list(vm, disk):
             if snap.name == name:
                 return snap
-        raise StorageError(f"snapshot not found: {name!r} (disk {disk!r}, vm {vm!r})")
+        raise StorageError(
+            f"snapshot not found: {name!r} (disk {disk!r}, vm {vm!r})",
+            code="not_found",
+        )
 
     def snapshot_revert(self, vm: str, disk: str, name: str) -> None:
         """Discard the active overlay and branch a fresh one from `name`.
@@ -294,13 +304,15 @@ class DiskStore:
         if snap.current:
             raise StorageError(
                 f"snapshot {name!r} is the base of the active disk; "
-                "revert to another snapshot first"
+                "revert to another snapshot first",
+                code="invalid_state",
             )
         if snap.children:
             if len(snap.children) > 1:
                 raise StorageError(
                     f"snapshot {name!r} has multiple children "
-                    f"({', '.join(snap.children)}); delete or merge them first"
+                    f"({', '.join(snap.children)}); delete or merge them first",
+                    code="invalid_state",
                 )
             child = self._get_snapshot(vm, disk, snap.children[0])
             grandparent = (

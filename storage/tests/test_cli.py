@@ -67,7 +67,54 @@ def test_cli_snapshot_flow(capsys, home):
 def test_cli_error_exit_code(capsys, home):
     rc = run(home, "info", "vm1", "missing")
     assert rc == 1
-    assert "error:" in capsys.readouterr().err
+    err = json.loads(capsys.readouterr().err)
+    assert err["error"]["code"] == "not_found"
+
+
+def test_cli_contract_version(capsys):
+    with pytest.raises(SystemExit) as excinfo:
+        main(["--contract-version"])
+    assert excinfo.value.code == 0
+    assert capsys.readouterr().out.strip() == "1"
+
+
+def test_cli_tree_alias(capsys, home):
+    run_json(capsys, home, "create", "vm1", "root", "16M")
+    run_json(capsys, home, "snapshot", "create", "vm1", "root", "s1")
+    snaps = run_json(capsys, home, "tree", "vm1", "root")
+    assert {s["name"] for s in snaps} == {"s1"}
+
+
+def test_cli_error_json_shapes(capsys, home):
+    # not_found: revert to a snapshot that does not exist
+    run_json(capsys, home, "create", "vm1", "root", "16M")
+    rc = run(home, "--json", "snapshot", "revert", "vm1", "root", "nope")
+    assert rc == 1
+    err = json.loads(capsys.readouterr().err)
+    assert err["error"]["code"] == "not_found"
+    assert err["error"]["message"]
+
+    # invalid_config: name violating the shared regex
+    rc = run(home, "create", "vm1", "bad name", "16M")
+    assert rc == 1
+    err = json.loads(capsys.readouterr().err)
+    assert err["error"]["code"] == "invalid_config"
+
+    # already_exists
+    rc = run(home, "create", "vm1", "root", "16M")
+    assert rc == 1
+    err = json.loads(capsys.readouterr().err)
+    assert err["error"]["code"] == "already_exists"
+
+
+def test_cli_backend_error_details(capsys, home):
+    # qemu-img failure surfaces as code=backend with details.stderr
+    run_json(capsys, home, "create", "vm1", "root", "16M")
+    rc = run(home, "resize", "vm1", "root", "8M")  # shrink without --shrink
+    assert rc == 1
+    err = json.loads(capsys.readouterr().err)
+    assert err["error"]["code"] == "backend"
+    assert err["error"]["details"]["stderr"]
 
 
 def test_cli_delete(capsys, home):

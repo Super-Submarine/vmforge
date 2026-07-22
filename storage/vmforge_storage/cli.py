@@ -15,6 +15,8 @@ from pathlib import Path
 from .qemu_img import QemuImgError
 from .store import DiskStore, StorageError
 
+CONTRACT_VERSION = 1
+
 
 def _store(args: argparse.Namespace) -> DiskStore:
     return DiskStore(home=args.home)
@@ -115,6 +117,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--home", help="VMForge home (default: $VMFORGE_HOME or ~/.vmforge)")
     parser.add_argument("--json", action="store_true", help="machine-readable output")
+    parser.add_argument(
+        "--contract-version",
+        action="version",
+        version=str(CONTRACT_VERSION),
+        help="print the interface contract major version and exit",
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     p = sub.add_parser("create", help="create a new qcow2 disk")
@@ -166,6 +174,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--repair", action="store_true")
     p.set_defaults(func=cmd_check)
 
+    p = sub.add_parser("tree", help="show the snapshot tree (alias of 'snapshot list')")
+    p.add_argument("vm")
+    p.add_argument("disk")
+    p.set_defaults(func=cmd_snapshot_list)
+
     snap = sub.add_parser("snapshot", help="offline snapshot tree management")
     snap_sub = snap.add_subparsers(dest="snapshot_command", required=True)
 
@@ -195,12 +208,25 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _error_json(exc: StorageError | QemuImgError) -> dict:
+    if isinstance(exc, StorageError):
+        return {"error": {"code": exc.code, "message": str(exc)}}
+    return {
+        "error": {
+            "code": "backend",
+            "message": str(exc),
+            "details": {"stderr": exc.stderr, "returncode": exc.returncode},
+        }
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         args.func(args)
     except (StorageError, QemuImgError) as exc:
-        print(f"error: {exc}", file=sys.stderr)
+        json.dump(_error_json(exc), sys.stderr)
+        print(file=sys.stderr)
         return 1
     return 0
 
