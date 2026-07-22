@@ -36,3 +36,32 @@ jobs:
           if [ -n "$bad" ]; then
             echo "Committed build artifacts found:"; echo "$bad"; exit 1
           fi
+
+  # The macOS/HVF backend must keep building for Apple targets even though
+  # PR CI runs on Linux; this cross-target check prevents bit-rot.
+  cross-check-macos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+      - name: Check (aarch64-apple-darwin)
+        run: cargo check --workspace --all-targets --target aarch64-apple-darwin
+
+  # Exercises the hvf backend's aarch64 `virt` invocation + QMP lifecycle
+  # end-to-end under -accel tcg (identical invocation modulo -accel/-cpu;
+  # hvf-only assertions are skipped and covered by a future macOS runner).
+  tcg-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install QEMU (aarch64 system emulation + qemu-img + edk2)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-arm qemu-utils qemu-efi-aarch64
+      - name: aarch64 virt TCG lifecycle test
+        run: cargo test -p vmforge-backend-hvf --test tcg_lifecycle -- --ignored --nocapture
