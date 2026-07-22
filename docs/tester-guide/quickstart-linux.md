@@ -19,7 +19,9 @@ sudo dnf install -y qemu-system-x86 qemu-img genisoimage python3 curl git
 ```
 
 You also need a Rust toolchain to build the CLI (until packaged binaries ship):
-https://rustup.rs — then `rustup default stable`.
+https://rustup.rs — then `rustup default stable`. If a signed `.deb`/`.AppImage`
+release has been published for your wave, you can install that instead — see
+the [install & verification guide](install.md).
 
 ## 2. Verify KVM (do this before anything else)
 

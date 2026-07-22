@@ -3,6 +3,12 @@
 Verified against the code on `main` (`crates/vmforge-cli/src/main.rs`) and by
 running the binary — output samples below are real, not invented.
 
+> **CLI freeze:** the wave-1 command-line surface is frozen. The authoritative
+> list of stable verbs, flags, and exit codes is
+> [`docs/cli-freeze-v1.0-beta.md`](../cli-freeze-v1.0-beta.md), enforced in CI
+> by `qa/cli-freeze/check.py`. Everything marked *stable* there will not
+> change during the beta; anything *experimental* may change without notice.
+
 ## Shipped on `main` today
 
 ### `vmforge info`
@@ -128,20 +134,28 @@ vmforgectl.py --vm <name> exec -- uname -a # run a command in the guest
 ### Engine lifecycle verbs (PR #3)
 
 The M1 integration (see `docs/m1-integration-plan.md`) replaces
-the scaffold with lifecycle verbs:
+the scaffold with lifecycle verbs. Shapes as implemented on the PR #3 branch
+(enumerated in the [freeze doc §1.3](../cli-freeze-v1.0-beta.md), **experimental**):
 
 ```
-vmforge create <name> [--cpus N] [--memory MiB] [--disk PATH] [--disk-size SIZE] [--iso PATH]
-vmforge start <name>
-vmforge stop <name> [--grace secs]
-vmforge status <name>
-vmforge list
-vmforge snapshot <create|restore|delete|list> <name> [tag]
+vmforge [--root PATH] create <name> [--cpus N] [--memory MiB] --disk PATH [--disk-size SIZE] [--iso PATH]
+vmforge [--root PATH] start <name>
+vmforge [--root PATH] stop <name> [--grace SECS]
+vmforge [--root PATH] status <name>
+vmforge [--root PATH] list
+vmforge [--root PATH] snapshot create  <name> <tag>
+vmforge [--root PATH] snapshot restore <name> <tag>
+vmforge [--root PATH] snapshot delete  <name> <tag>
+vmforge [--root PATH] snapshot list    <name>
 ```
+
+Exit codes on that branch: 0 success, 1 any error, 2 usage error.
 
 Snapshots there are **live** (RAM + device + disk via QMP savevm/loadvm) when
 the VM runs, disk-only when stopped.
 
-These shapes are **provisional until the CLI-freeze gate** and are documented
-here only so you recognize them when they land; this page will be regenerated
-from the merged code at that point. Do not script against them yet.
+These shapes are **experimental under the CLI freeze**
+([freeze doc §1.3](../cli-freeze-v1.0-beta.md)) and are documented here only
+so you recognize them when they land; on merge they can be promoted to stable
+via a PR updating the freeze doc + manifest, and this page will be
+regenerated from the merged code. Do not script against them yet.
