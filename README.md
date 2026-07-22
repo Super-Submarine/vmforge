@@ -27,6 +27,20 @@ crates/
 docs/architecture.md     Design doc: components, state machine, licensing, risks
 ```
 
+## Screenshots
+
+`vmforge info` — active backend and capabilities:
+
+![vmforge info](assets/screenshots/vmforge-info.png)
+
+`vmforge diagnose` — redacted bug-report bundle ([docs/diagnose.md](docs/diagnose.md)):
+
+![vmforge diagnose](assets/screenshots/vmforge-diagnose.png)
+
+`vmforge net` (experimental) — user-mode NIC args and SSH port-forward helper:
+
+![vmforge net](assets/screenshots/vmforge-net.png)
+
 ## Development
 
 ```sh
