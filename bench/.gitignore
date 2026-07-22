@@ -1,0 +1,4 @@
+images/
+work/
+results/*.json
+results/*.json.tmp

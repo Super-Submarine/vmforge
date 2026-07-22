@@ -4,6 +4,8 @@ Desktop virtualization to rival VMware Workstation/Fusion and Parallels: instant
 
 This repository contains the **hypervisor abstraction layer (HAL)** scaffold from the Sprint 0/1 architecture spike. Full design: [`docs/architecture.md`](docs/architecture.md).
 
+**Beta testers:** start with the [tester guide](docs/tester-guide/README.md) (quickstart, CLI reference, troubleshooting, bug reporting).
+
 ## Architecture summary
 
 - **Language:** Rust (memory-safe systems code; rust-vmm ecosystem available for a future direct-KVM backend — https://github.com/rust-vmm).
