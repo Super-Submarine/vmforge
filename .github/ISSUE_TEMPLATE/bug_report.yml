@@ -1,0 +1,53 @@
+name: Bug report
+description: Something broke — a crash, a failed command, wrong behavior, or a restore/snapshot problem.
+title: "[bug]: "
+labels: ["bug", "beta-feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. GitHub Issues is the system of record for the beta — anything actionable you report in chat gets promoted here within 24h, but filing directly is faster.
+        **Restore failures, data loss, running-VM crashes, or broken installs are always P1** — file them immediately, even if incomplete.
+  - type: dropdown
+    id: severity
+    attributes:
+      label: How bad is it?
+      options:
+        - "P1 — data loss, snapshot restore failed, running VM crashed, or install is broken"
+        - "P2 — a documented feature doesn't work, but I have a workaround"
+        - "P3 — cosmetic, confusing message, or minor annoyance"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, what happened instead?
+      placeholder: |
+        1. Ran `vmforge snapshot create dev-vm before-upgrade`
+        2. Expected a new snapshot in `vmforge snapshot list`
+        3. Got exit code 2 and the error below
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Exact command(s) and output
+      description: Paste the command you ran and its full output. Add `--json` output too if available.
+      render: shell
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: |
+        Distro + version, kernel (`uname -r`), CPU (`lscpu | grep "Model name"`), KVM status (`ls -l /dev/kvm`), install method (.deb or .AppImage), and VMForge version (`vmforge --version`).
+      placeholder: |
+        Fedora 42, kernel 6.15.3, AMD Ryzen 7 5800X, /dev/kvm present+writable, .deb, vmforge 0.1.0-beta.1
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics (optional, opt-in)
+      description: If you agreed to run the diagnostics block from the tester guide's reporting-bugs page, paste its output here. VMForge collects no telemetry — this is copy-paste only.
+      render: shell

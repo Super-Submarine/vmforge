@@ -1,0 +1,28 @@
+name: Feature request
+description: Something VMForge doesn't do yet that would make it your daily driver.
+title: "[feature]: "
+labels: ["enhancement", "beta-feedback"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What workflow is blocked or awkward today?
+      description: Start from the job you're trying to do, not the feature you want.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like VMForge to do?
+    validations:
+      required: true
+  - type: dropdown
+    id: importance
+    attributes:
+      label: How much does this matter to you?
+      options:
+        - "Blocker — I can't use VMForge as my main VM tool without it"
+        - "Important — I work around it, but it hurts weekly"
+        - "Nice to have"
+    validations:
+      required: true

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Beta tester guide & troubleshooting
+    url: https://github.com/Super-Submarine/vmforge/blob/main/docs/tester-guide/README.md
+    about: Quickstart, CLI reference, and troubleshooting (T1–T6) — check here before filing an install bug.
+  - name: Beta Discord (help & discussion)
+    url: https://github.com/Super-Submarine/vmforge
+    about: Chat is for help; GitHub Issues is the system of record. Anything actionable from chat is promoted to an issue within 24h.
