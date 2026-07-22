@@ -1,0 +1,64 @@
+name: QA smoke
+
+on:
+  push:
+    branches: [main]
+    paths: ['qa/**', '.github/workflows/qa-smoke.yml']
+  pull_request:
+    paths: ['qa/**', '.github/workflows/qa-smoke.yml']
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    name: smoke (${{ matrix.mode }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mode: auto   # KVM when the runner exposes /dev/kvm, else TCG
+            force_tcg: '0'
+          - mode: tcg    # always exercise the TCG fallback path
+            force_tcg: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install QEMU
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q qemu-system-x86 qemu-utils genisoimage
+
+      - name: Enable KVM access
+        if: matrix.force_tcg == '0'
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod a+rw /dev/kvm
+            echo "KVM available"
+          else
+            echo "No /dev/kvm — will fall back to TCG"
+          fi
+
+      - name: Cache guest image
+        uses: actions/cache@v4
+        with:
+          path: qa/smoke/.work/*.qcow2
+          key: guest-image-alpine-3.20.3
+
+      - name: Smoke test (boot + snapshot/restore)
+        env:
+          FORCE_TCG: ${{ matrix.force_tcg }}
+        run: qa/smoke/smoke_test.sh
+
+      - name: Negative cases
+        env:
+          FORCE_TCG: ${{ matrix.force_tcg }}
+        run: qa/smoke/smoke_test.sh --negative
+
+      - name: Upload serial logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: serial-logs-${{ matrix.mode }}
+          path: qa/smoke/.work/serial-*.log
+          if-no-files-found: ignore
