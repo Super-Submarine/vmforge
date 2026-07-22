@@ -6,6 +6,20 @@ This repository contains the **hypervisor abstraction layer (HAL)** scaffold fro
 
 **Beta testers:** start with the [tester guide](docs/tester-guide/README.md) (quickstart, CLI reference, troubleshooting, bug reporting).
 
+## Screenshots
+
+`vmforge info` and `vmforge diagnose` — host/backend capability probe and the redacted bug-report bundle:
+
+![vmforge info and diagnose](docs/screenshots/cli-info-diagnose.png)
+
+`vmforge-storage` — git-like snapshot trees: import a base image, make a linked clone, snapshot, branch, and render the tree:
+
+![vmforge-storage snapshot tree workflow](docs/screenshots/storage-snapshot-tree.png)
+
+A linked clone created by `vmforge-storage` booting to the guest login prompt under QEMU (serial console, TCG — no KVM required):
+
+![linked clone booting to login prompt](docs/screenshots/linked-clone-boot.png)
+
 ## Architecture summary
 
 - **Language:** Rust (memory-safe systems code; rust-vmm ecosystem available for a future direct-KVM backend — https://github.com/rust-vmm).
