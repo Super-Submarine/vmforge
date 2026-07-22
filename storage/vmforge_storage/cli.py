@@ -12,6 +12,7 @@ import sys
 from dataclasses import asdict
 from pathlib import Path
 
+from .bundle import BundleManager
 from .qemu_img import QemuImgError
 from .store import DiskStore, StorageError
 
@@ -87,6 +88,43 @@ def cmd_check(args: argparse.Namespace) -> None:
     _print(args, human, result.raw)
     if not result.ok:
         sys.exit(3)
+
+
+def cmd_backup(args: argparse.Namespace) -> None:
+    result = BundleManager(_store(args)).backup(
+        args.vm, args.bundle, snapshot=args.snapshot
+    )
+    _print(
+        args,
+        f"backed up {result.vm} ({', '.join(result.disks)}) -> {result.bundle} "
+        f"({result.files} files, {result.total_bytes} bytes)",
+        {
+            "bundle": str(result.bundle),
+            "vm": result.vm,
+            "disks": result.disks,
+            "files": result.files,
+            "total_bytes": result.total_bytes,
+        },
+    )
+
+
+def cmd_restore(args: argparse.Namespace) -> None:
+    result = BundleManager(_store(args)).restore(
+        args.bundle, as_vm=args.as_vm, force=args.force
+    )
+    _print(
+        args,
+        f"restored {result.vm} under {result.home} "
+        f"({len(result.disks)} disk(s), {result.snapshots} snapshot(s); "
+        f"health check passed)",
+        {
+            "vm": result.vm,
+            "home": str(result.home),
+            "disks": result.disks,
+            "snapshots": result.snapshots,
+            "checks": result.checks,
+        },
+    )
 
 
 def cmd_snapshot_create(args: argparse.Namespace) -> None:
@@ -173,6 +211,21 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("disk")
     p.add_argument("--repair", action="store_true")
     p.set_defaults(func=cmd_check)
+
+    p = sub.add_parser("backup", help="export a whole VM to a portable bundle")
+    p.add_argument("vm")
+    p.add_argument("bundle", help="bundle path (.tar, or .tar.gz/.tgz to compress)")
+    p.add_argument("--snapshot", default=None,
+                   help="export only the chain up to this snapshot")
+    p.set_defaults(func=cmd_backup)
+
+    p = sub.add_parser("restore", help="recreate a VM from a backup bundle")
+    p.add_argument("bundle")
+    p.add_argument("--as", dest="as_vm", default=None, metavar="NEW_VM",
+                   help="restore under a different VM name")
+    p.add_argument("--force", action="store_true",
+                   help="overwrite an existing VM of the same name")
+    p.set_defaults(func=cmd_restore)
 
     p = sub.add_parser("tree", help="show the snapshot tree (alias of 'snapshot list')")
     p.add_argument("vm")
