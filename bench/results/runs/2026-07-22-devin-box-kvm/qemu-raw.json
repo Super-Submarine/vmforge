@@ -1,0 +1,57 @@
+{
+  "stack": "raw QEMU/KVM (HMP savevm/loadvm + qemu-img)",
+  "guest": "alpine-nocloud.qcow2",
+  "mem_mb": 512,
+  "iterations": [
+    {
+      "boot_s": 19.986053641999888,
+      "snapshot_create_s": 0.21912376099999165,
+      "storage_overhead_bytes": 134098944,
+      "snapshot_restore_s": 0.12374315200008823,
+      "resume_from_disk_s": 0.16667383600020003
+    },
+    {
+      "boot_s": 20.33305399400001,
+      "snapshot_create_s": 0.21689434100017024,
+      "storage_overhead_bytes": 136003584,
+      "snapshot_restore_s": 0.11875178299987965,
+      "resume_from_disk_s": 0.16257918199994492
+    },
+    {
+      "boot_s": 20.015493606000064,
+      "snapshot_create_s": 0.21875182999997378,
+      "storage_overhead_bytes": 135544832,
+      "snapshot_restore_s": 0.1287615740000092,
+      "resume_from_disk_s": 0.16146419100005005
+    },
+    {
+      "boot_s": 20.09872878200008,
+      "snapshot_create_s": 0.22871451700007128,
+      "storage_overhead_bytes": 134168576,
+      "snapshot_restore_s": 0.12584896499993192,
+      "resume_from_disk_s": 0.1549976040000729
+    },
+    {
+      "boot_s": 20.010834379000016,
+      "snapshot_create_s": 0.21583590000000186,
+      "storage_overhead_bytes": 134430720,
+      "snapshot_restore_s": 0.117119349999939,
+      "resume_from_disk_s": 0.18144894000010936
+    }
+  ],
+  "machine": {
+    "hostname": "devin-box",
+    "kernel": "5.15.200",
+    "os": "Ubuntu 22.04.5 LTS",
+    "cpu_model": "Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz",
+    "cpus": 8,
+    "mem_total_kb": 32881112,
+    "kvm_available": true,
+    "qemu_version": "QEMU emulator version 6.2.0 (Debian 1:6.2+dfsg-2ubuntu6.31)",
+    "qemu_img_version": "qemu-img version 6.2.0 (Debian 1:6.2+dfsg-2ubuntu6.31)",
+    "virtualbox_version": "not available",
+    "firecracker_version": "Firecracker v1.10.1",
+    "disk": "/dev/root      ext4  122G",
+    "timestamp_utc": "2026-07-22T16:33:20Z"
+  }
+}
