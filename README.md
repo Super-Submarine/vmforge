@@ -4,6 +4,18 @@ Desktop virtualization to rival VMware Workstation/Fusion and Parallels: instant
 
 This repository contains the **hypervisor abstraction layer (HAL)** scaffold from the Sprint 0/1 architecture spike. Full design: [`docs/architecture.md`](docs/architecture.md).
 
+## GUI alpha preview
+
+The VMForge GUI alpha (Tauri v2 VM manager, [PR #7](https://github.com/Super-Submarine/vmforge/pull/7)):
+
+*VM manager — VM list with state, resources, snapshots and lifecycle actions:*
+
+![VMForge VM manager](docs/img/gui-vm-manager.png)
+
+*One-click Create VM with sane defaults (2 vCPU / 2 GiB / 20 GiB qcow2):*
+
+![VMForge one-click create](docs/img/gui-one-click-create.png)
+
 ## Architecture summary
 
 - **Language:** Rust (memory-safe systems code; rust-vmm ecosystem available for a future direct-KVM backend — https://github.com/rust-vmm).
