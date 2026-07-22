@@ -27,6 +27,34 @@ crates/
 docs/architecture.md     Design doc: components, state machine, licensing, risks
 ```
 
+## Screenshots
+
+### GUI alpha — VM manager + console
+
+From the GUI alpha (Tauri VM manager + QEMU VNC console, see [PR #7](https://github.com/Super-Submarine/vmforge/pull/7)), running on a Linux/KVM host.
+
+VM manager — VM list with state, resources, snapshots, and lifecycle actions:
+
+![VMForge VM manager](assets/screenshots/vmforge-gui-manager.png)
+
+Manager + console windowed on the host desktop — an Ubuntu 24.04 LTS desktop guest booted under QEMU/KVM, viewed through the VM's VNC display:
+
+![VMForge manager and console running an Ubuntu 24.04 guest](assets/screenshots/vmforge-gui-ubuntu-desktop.png)
+
+### CLI
+
+`vmforge info` — active backend and capabilities:
+
+![vmforge info](assets/screenshots/vmforge-info.png)
+
+`vmforge diagnose` — redacted bug-report bundle ([docs/diagnose.md](docs/diagnose.md)):
+
+![vmforge diagnose](assets/screenshots/vmforge-diagnose.png)
+
+`vmforge net` (experimental) — user-mode NIC args and SSH port-forward helper:
+
+![vmforge net](assets/screenshots/vmforge-net.png)
+
 ## Development
 
 ```sh
