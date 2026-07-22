@@ -1,0 +1,17 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/vmforge-core",
+    "crates/vmforge-backend-kvm",
+    "crates/vmforge-backend-hvf",
+    "crates/vmforge-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "LicenseRef-Proprietary"
+repository = "https://github.com/Super-Submarine/vmforge"
+
+[workspace.dependencies]
+thiserror = "1.0"
