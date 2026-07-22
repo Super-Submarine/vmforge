@@ -1,9 +1,11 @@
-# VMForge Guest Tools v0
+# VMForge Guest Tools
 
 Guest agent + host client for VMForge VMs, communicating over a **virtio-serial**
 channel (no guest networking required). The wire protocol is newline-delimited
 JSON modeled on [qemu-guest-agent](https://qemu-project.gitlab.io/qemu/interop/qemu-ga.html)
-QMP conventions, so we can later interoperate with or replace qemu-ga.
+QMP conventions — full spec, versioning and compatibility rules in
+[`PROTOCOL.md`](PROTOCOL.md); the binding interface contract is
+[`docs/interface-contracts.md` §3](../docs/interface-contracts.md).
 
 ## Components
 
@@ -13,16 +15,23 @@ QMP conventions, so we can later interoperate with or replace qemu-ga.
 | `agent/vmforge-ga.service` | systemd unit (Debian/Fedora/Ubuntu guests) |
 | `agent/vmforge-ga.openrc` | OpenRC service (Alpine guests) |
 | `host/vmforgectl.py` | Host-side client library (`GuestAgentClient`) and CLI |
+| `PROTOCOL.md` | Wire protocol v1.1: commands, error codes, versioning |
+| `tests/` | Protocol unit tests, golden transcript, Alpine end-to-end smoke |
 
 ## QEMU flags the core engine must pass
 
+Per the M1 contract (`guest_agent: true` in `vm.json`):
+
 ```
 -device virtio-serial-pci,id=vmforge-vs0
--chardev socket,id=vmforge-ga0,path=/tmp/vmforge-ga.sock,server=on,wait=off
+-chardev socket,id=vmforge-ga0,path=$VMFORGE_HOME/vms/<vm>/guest-agent.sock,server=on,wait=off
 -device virtserialport,bus=vmforge-vs0.0,chardev=vmforge-ga0,name=org.vmforge.agent.0
 ```
 
-- The `-chardev socket,...,server=on,wait=off` creates a host UNIX socket QEMU
+- The socket lives under `$VMFORGE_HOME` (default `~/.vmforge`) — a
+  user-private directory. Never place it in `/tmp`: a predictable
+  world-writable path is squattable by other local users.
+- `-chardev socket,...,server=on,wait=off` creates a host UNIX socket QEMU
   listens on; `wait=off` lets the VM boot before any client connects.
 - `virtserialport` with `name=org.vmforge.agent.0` surfaces the channel in the
   guest as `/dev/virtio-ports/org.vmforge.agent.0` (udev symlink to `/dev/vportNpM`).
@@ -48,38 +57,53 @@ install -m 0755 agent/vmforge-ga.openrc /etc/init.d/vmforge-ga
 rc-update add vmforge-ga && rc-service vmforge-ga start
 ```
 
+When QA's M1 image bake (`qa/images/bake.sh`) lands, it should run the Alpine
+steps above so the agent ships pre-installed in the smoke image.
+
 ## Host usage
 
+`--vm <name>` resolves the contract socket path
+`$VMFORGE_HOME/vms/<name>/guest-agent.sock`; `--socket <path>` overrides it
+for debugging.
+
 ```sh
-host/vmforgectl.py --socket /tmp/vmforge-ga.sock wait-ready   # poll until agent up
-host/vmforgectl.py --socket /tmp/vmforge-ga.sock ping         # heartbeat -> {}
-host/vmforgectl.py --socket /tmp/vmforge-ga.sock host-info    # hostname/OS/kernel/IPs
-host/vmforgectl.py --socket /tmp/vmforge-ga.sock interfaces   # full per-NIC detail
-host/vmforgectl.py --socket /tmp/vmforge-ga.sock shutdown     # graceful poweroff
-host/vmforgectl.py --socket /tmp/vmforge-ga.sock shutdown --mode reboot
+host/vmforgectl.py --vm myvm wait-ready       # poll until agent up
+host/vmforgectl.py --vm myvm ping             # heartbeat -> {}
+host/vmforgectl.py --vm myvm info             # os/kernel/hostname/agent_version
+host/vmforgectl.py --vm myvm interfaces       # [{name, mac, ips}] per NIC
+host/vmforgectl.py --vm myvm net-info         # {hostname, ips} for GUI/CLI display
+host/vmforgectl.py --vm myvm shutdown         # graceful poweroff (ack only)
+host/vmforgectl.py --vm myvm shutdown --mode reboot
+# graceful with timeout + hard-stop fallback (engine supplies the hard stop):
+host/vmforgectl.py --vm myvm shutdown --wait --shutdown-timeout 60 \
+    --hard-stop-cmd 'echo quit | nc -U $VMFORGE_HOME/vms/myvm/qmp.sock'
+host/vmforgectl.py --vm myvm exec -- uname -a # run in guest, stdout/stderr/exit code
 ```
 
 As a library:
 
 ```python
-from vmforgectl import GuestAgentClient
-ga = GuestAgentClient("/tmp/vmforge-ga.sock")
+from vmforgectl import GuestAgentClient, default_socket_path
+ga = GuestAgentClient(default_socket_path("myvm"))
 ga.wait_ready()
-print(ga.host_info()["ip-addresses"])
-ga.shutdown()
+ga.check_protocol()                 # raises GuestAgentIncompatible on v0 agents
+print(ga.net_info())                # {'hostname': ..., 'ips': [...]}
+r = ga.exec_in_guest(["uname", "-a"])   # {'exit_code': 0, 'stdout': ..., 'stderr': ...}
+ga.shutdown_graceful(timeout=60, hard_stop=engine_kill_qemu)
 ```
 
-## Protocol
+## Tests
 
-Request/response are single JSON lines:
-
-```
--> {"execute": "guest-get-host-info", "id": 1}
-<- {"return": {"hostname": "vmforge-test", "ip-addresses": ["10.0.2.15", ...], ...}, "id": 1}
--> {"execute": "guest-shutdown", "arguments": {"mode": "powerdown"}, "id": 2}
-<- {"return": {"mode": "powerdown"}, "id": 2}
+```sh
+ruff check guest-tools
+pytest guest-tools/tests            # protocol unit + golden-transcript tests
+guest-tools/tests/ga_smoke.sh       # Alpine end-to-end (QEMU; KVM or TCG)
 ```
 
-Errors come back as `{"error": {"desc": "..."}, "id": N}`. Commands:
-`guest-ping`, `guest-info`, `guest-get-host-info`,
-`guest-network-get-interfaces`, `guest-shutdown` (`powerdown|reboot|halt`).
+The end-to-end smoke boots the cached Alpine cloud image with the agent
+installed via cloud-init, then exercises `wait-ready`, `info`, `net-info`,
+`interfaces`, `exec` and `shutdown --wait` (with hard-stop fallback armed)
+over the real virtio-serial channel. CI runs it in `.github/workflows/`
+alongside the QA smoke (KVM on hosted runners, TCG fallback). Manual-only
+coverage: `reboot`/`halt` modes and non-Alpine guests (documented in
+`tests/ga_smoke.sh`).
