@@ -3,6 +3,10 @@
 Welcome to the VMForge private beta. Wave 1 is **Linux/KVM only** (macOS/Apple Silicon
 testers join in wave 2, gated on HVF snapshot parity).
 
+What's in this build and what's known-broken: **[release notes](../release-notes.md)**.
+Installing from a signed release instead of building from source:
+**[install & verification guide](install.md)**.
+
 Start here, in order:
 
 1. **[Linux quickstart](quickstart-linux.md)** — install prerequisites, verify KVM,
