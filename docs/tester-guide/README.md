@@ -22,6 +22,23 @@ Start here, in order:
    launching it, one-click VM creation, the console viewer, what is stubbed vs.
    real, and a CLI ↔ GUI feature-parity table with CLI fallbacks.
 
+Topic guides (new in docs v1.3 — the features they cover are **in flight**,
+not on `main` yet; each page states its exact merge status):
+
+- **[Backup & restore](backup-restore.md)** — whole-VM portable bundles
+  (`vmforge-storage backup`/`restore`, PR #28), plus the manual backup
+  recipe that works on `main` today.
+- **[Port forwarding & guest SSH](port-forwarding.md)** — `--forward` specs
+  and `vmforge net` helpers (PR #15), plus the manual QEMU `hostfwd` recipe.
+- **[Shared folders](shared-folders.md)** — status page: announced but not
+  yet in the repository; workarounds for moving files host ↔ guest.
+- **[Diagnostics](diagnostics.md)** — `vmforge doctor` (PR #30),
+  `vmforge-net doctor` (branch), `vmforge diagnose` (PR #17), and when to
+  use each.
+- **[Troubleshooting by error code](error-codes.md)** — the 11-class engine
+  error taxonomy (exit codes 10–20, PR #30): symptom, likely cause, and
+  recovery for every code.
+
 ## Severity rubric (used everywhere in this guide)
 
 | Severity | Definition | Our response |

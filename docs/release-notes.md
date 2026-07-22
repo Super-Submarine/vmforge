@@ -49,6 +49,31 @@
   must not be trusted or distributed — see the
   [install & verification guide](tester-guide/install.md#trusting-the-signing-key).
 
+### Coming next (in review — not in this build)
+
+Documented in docs v1.3 so testers recognize them when they land; all are
+additive to the frozen CLI and **experimental** until promoted:
+
+- **Whole-VM backup/restore** — `vmforge-storage backup`/`restore` portable
+  bundles with checksums and restore health checks (storage v1.2, PR
+  [#28](https://github.com/Super-Submarine/vmforge/pull/28)); guide:
+  [Backup & restore](tester-guide/backup-restore.md).
+- **Port forwarding & guest SSH** — `--forward` specs + `vmforge net
+  args`/`ssh-command` (networking v1.2, PR
+  [#15](https://github.com/Super-Submarine/vmforge/pull/15)); guide:
+  [Port forwarding](tester-guide/port-forwarding.md).
+- **Diagnostics** — `vmforge doctor` host preflight (PR
+  [#30](https://github.com/Super-Submarine/vmforge/pull/30)),
+  `vmforge diagnose` bug-report bundle (PR
+  [#17](https://github.com/Super-Submarine/vmforge/pull/17)), and
+  `vmforge-net doctor` connectivity checks (branch, no PR yet); guide:
+  [Diagnostics](tester-guide/diagnostics.md).
+- **Structured error codes** — 11-class engine error taxonomy, stable exit
+  codes 10–20 and JSON errors (PR #30); guide:
+  [Troubleshooting by error code](tester-guide/error-codes.md).
+- **Shared folders** (virtiofs/9p) — announced, **no code in the repository
+  yet**; status page: [Shared folders](tester-guide/shared-folders.md).
+
 ### Supported platforms
 
 | Platform | Status |
