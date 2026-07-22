@@ -6,6 +6,18 @@ This repository contains the **hypervisor abstraction layer (HAL)** scaffold fro
 
 **Beta testers:** start with the [tester guide](docs/tester-guide/README.md) (quickstart, CLI reference, troubleshooting, bug reporting).
 
+## Screenshots
+
+### VM Manager (GUI alpha)
+
+![VMForge VM Manager (alpha) — VM list with state, resources, snapshots and start/stop/snapshot/console actions](docs/screenshots/vm-manager.png)
+
+*The Tauri-based VM Manager is in alpha ([PR #7](https://github.com/Super-Submarine/vmforge/pull/7)).*
+
+### `vmforge` CLI
+
+![vmforge CLI — `vmforge info` backend/accelerator report and `vmforge diagnose` redacted bug-report bundle](docs/screenshots/cli.png)
+
 ## Architecture summary
 
 - **Language:** Rust (memory-safe systems code; rust-vmm ecosystem available for a future direct-KVM backend — https://github.com/rust-vmm).
