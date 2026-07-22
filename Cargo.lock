@@ -142,6 +142,7 @@ dependencies = [
 name = "vmforge-cli"
 version = "0.1.0"
 dependencies = [
+ "serde_json",
  "vmforge-backend-hvf",
  "vmforge-backend-kvm",
  "vmforge-core",
