@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+# Alpine OpenRC service for the VMForge guest agent.
+# Install: cp vmforge-ga.openrc /etc/init.d/vmforge-ga && rc-update add vmforge-ga
+
+name="vmforge-ga"
+description="VMForge guest agent"
+command="/usr/bin/python3"
+command_args="/usr/local/bin/vmforge-ga.py"
+command_background="yes"
+pidfile="/run/vmforge-ga.pid"
+
+depend() {
+    need dev
+    after net
+}
