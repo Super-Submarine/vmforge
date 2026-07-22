@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/vmforge-core",
     "crates/vmforge-backend-kvm",
+    "crates/vmforge-engine-qemu",
     "crates/vmforge-backend-hvf",
     "crates/vmforge-cli",
 ]
@@ -15,3 +16,4 @@ repository = "https://github.com/Super-Submarine/vmforge"
 
 [workspace.dependencies]
 thiserror = "1.0"
+serde_json = "1.0"

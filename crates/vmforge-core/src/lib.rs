@@ -13,7 +13,7 @@ pub mod vm;
 
 pub use error::HvError;
 pub use snapshot::{SnapshotId, SnapshotStore};
-pub use state::VmState;
+pub use state::{VmOp, VmState};
 pub use vm::{VmConfig, VmHandle};
 
 /// Guest instruction-set architecture.
