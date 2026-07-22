@@ -16,6 +16,16 @@ This repository contains the **hypervisor abstraction layer (HAL)** scaffold fro
 - **Engine strategy:** Phase 1 drives QEMU as a separate child process over QMP (`-accel kvm` / `-accel hvf`, https://www.qemu.org/docs/master/interop/qmp-spec.html) — keeping proprietary app code outside GPL scope via the process boundary (https://www.gnu.org/licenses/gpl-faq.html#MereAggregation). Phase 2 swaps in direct KVM-ioctl / Hypervisor.framework backends behind the same trait where snapshot/resume latency demands it.
 - **Guest I/O:** virtio devices (OASIS spec, https://docs.oasis-open.org/virtio/virtio/v1.2/virtio-v1.2.html); 3D via virtio-gpu + virgl/Venus (https://docs.mesa3d.org/drivers/venus.html).
 
+## Screenshots
+
+GUI alpha (Tauri VM manager, [PR #7](https://github.com/Super-Submarine/vmforge/pull/7)):
+
+![VMForge VM manager (alpha)](docs/screenshots/vm-manager.png)
+
+Console viewer connected to a QEMU guest over VNC (`gui/spike/run_qemu_vnc.sh`):
+
+![VM console viewer over QEMU VNC](docs/screenshots/console-vnc.png)
+
 ## Layout
 
 ```
