@@ -6,8 +6,9 @@
 //! (the only two flags that differ — asserted by unit tests in
 //! `vmforge-engine-qemu`). Everything this test exercises — process spawn,
 //! UEFI firmware boot, virtio devices, QMP handshake, cont/stop, external
-//! disk overlay + RAM-state snapshot, quit — is common code shared with
-//! the real hvf configuration.
+//! disk overlay + RAM-state snapshot, restore-from-state (`-incoming
+//! defer` + `migrate-incoming`), snapshot branching, quit — is common
+//! code shared with the real hvf configuration.
 //!
 //! hvf-only behavior (real `-accel hvf` init, `-cpu host`, HVF vGIC,
 //! entitlement checks) cannot run on Linux and is SKIPPED here; it is
@@ -19,7 +20,7 @@
 use std::process::Command;
 
 use vmforge_backend_hvf::HvfBackend;
-use vmforge_core::{GuestArch, Hypervisor, VmConfig, VmState};
+use vmforge_core::{GuestArch, Hypervisor, SnapshotId, VmConfig, VmState};
 use vmforge_engine_qemu::Accel;
 
 fn have_tools() -> bool {
@@ -83,6 +84,36 @@ fn aarch64_virt_tcg_full_lifecycle() {
     let snap = backend.snapshot(&vm, None).expect("snapshot failed");
     assert!(!snap.0.is_empty());
     assert_eq!(backend.state(&vm).unwrap(), VmState::Running);
+
+    // restore from a snapshot requires the VM not be Running (FSM)
+    assert!(backend.restore(&vm, snap.clone()).is_err());
+
+    // stop, then restore: re-spawn with -incoming defer, fresh overlay on
+    // the snapshot's frozen disk layer, load saved RAM state, cont ->
+    // Running (the instant-resume primitive)
+    backend.stop(&vm).expect("stop failed");
+    assert_eq!(backend.state(&vm).unwrap(), VmState::Stopped);
+    backend.restore(&vm, snap.clone()).expect("restore failed");
+    assert_eq!(backend.state(&vm).unwrap(), VmState::Running);
+
+    // branch: snapshot the restored timeline as a child of `snap` — the
+    // DAG now has two nodes on one lineage (git-like branching)
+    let child = backend
+        .snapshot(&vm, Some(snap.clone()))
+        .expect("branch snapshot failed");
+    assert_ne!(child, snap);
+
+    // unknown parents/snapshots are rejected
+    assert!(backend
+        .snapshot(&vm, Some(SnapshotId("ghost".into())))
+        .is_err());
+
+    // restore the ORIGINAL snapshot again from Stopped -> a second branch
+    // rooted at `snap`; the frozen layers are never mutated
+    backend.stop(&vm).expect("stop failed");
+    backend.restore(&vm, snap).expect("re-restore failed");
+    assert_eq!(backend.state(&vm).unwrap(), VmState::Running);
+    assert!(backend.restore(&vm, SnapshotId("ghost".into())).is_err());
 
     // stop -> Stopped (QMP quit), then delete
     backend.stop(&vm).expect("stop failed");

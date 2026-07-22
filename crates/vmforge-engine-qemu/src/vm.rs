@@ -141,6 +141,34 @@ impl QemuVm {
         Ok(SnapshotId(format!("{:016x}", hasher.finish())))
     }
 
+    /// Load saved RAM/device state on a VM spawned with `-incoming defer`
+    /// (see [`Invocation::with_incoming_defer`](crate::Invocation::with_incoming_defer)):
+    /// issues QMP `migrate-incoming` from `state_file` and waits until the
+    /// run state leaves `inmigrate`. The guest is left paused (`-S`); call
+    /// [`cont`](Self::cont) to start vCPUs — this is the instant-resume
+    /// primitive behind `restore`.
+    pub fn restore_incoming(&mut self, state_file: &std::path::Path) -> Result<(), HvError> {
+        self.qmp.execute(
+            "migrate-incoming",
+            Some(json!({
+                "uri": format!("exec:cat {}", state_file.to_string_lossy()),
+            })),
+        )?;
+        let deadline = Instant::now() + Duration::from_secs(120);
+        loop {
+            match self.status()?.as_str() {
+                "inmigrate" if Instant::now() > deadline => {
+                    return Err(HvError::Engine("incoming state load timed out".into()))
+                }
+                "inmigrate" => std::thread::sleep(Duration::from_millis(100)),
+                "internal-error" | "io-error" => {
+                    return Err(HvError::Engine("incoming state load failed".into()))
+                }
+                _ => return Ok(()),
+            }
+        }
+    }
+
     fn wait_migration(&mut self, timeout: Duration) -> Result<(), HvError> {
         let deadline = Instant::now() + timeout;
         loop {

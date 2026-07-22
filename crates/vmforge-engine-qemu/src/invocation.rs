@@ -49,6 +49,17 @@ pub struct Invocation {
     pub qmp_socket: PathBuf,
 }
 
+impl Invocation {
+    /// Start with incoming migration deferred (`-incoming defer`): the VM
+    /// waits for a QMP `migrate-incoming` before loading saved RAM state.
+    /// Used by `restore` to boot directly from a snapshot's state file.
+    pub fn with_incoming_defer(mut self) -> Self {
+        self.args.push("-incoming".into());
+        self.args.push("defer".into());
+        self
+    }
+}
+
 /// Default UEFI firmware image name for aarch64 guests. A bare filename is
 /// resolved by QEMU against its own data directories (`-L`), so this works
 /// with distro QEMU on Linux, Homebrew QEMU on macOS, and the QEMU build

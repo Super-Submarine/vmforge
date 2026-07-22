@@ -10,9 +10,12 @@
 //!
 //! MVP scope (per the HVF port plan doc): Apple Silicon hosts, aarch64
 //! Linux guests. Snapshots take a pause window (no userfaultfd /
-//! `background-snapshot` on macOS); `restore` is deferred to the M3
-//! snapshot-fidelity spike. macOS packaging/signing/entitlement follow-ups
-//! are tracked in `docs/macos-packaging-todo.md`, not implemented here.
+//! `background-snapshot` on macOS). `restore` re-spawns QEMU with
+//! `-incoming defer`, fresh qcow2 overlays on the snapshot's frozen disk
+//! layers, and loads the saved RAM state — restoring the same snapshot
+//! repeatedly (or snapshotting after a restore) branches the DAG, git
+//! style. macOS packaging/signing/entitlement follow-ups are tracked in
+//! `docs/macos-packaging-todo.md`, not implemented here.
 //!
 //! Phase 2: direct Hypervisor.framework / Virtualization.framework backend
 //! behind the same trait. See `docs/architecture.md` §2.
@@ -28,6 +31,15 @@ use vmforge_engine_qemu::{invocation, Accel, QemuVm};
 
 const BACKEND: &str = "hvf";
 
+/// On-disk artifacts backing one snapshot: the frozen qcow2 layers that
+/// were active when it was taken (per disk, restore overlays stack on
+/// these) and the saved RAM/device state file.
+struct SnapshotArtifacts {
+    disk_bases: Vec<PathBuf>,
+    state_file: PathBuf,
+    parent: Option<SnapshotId>,
+}
+
 struct VmEntry {
     config: VmConfig,
     state: VmState,
@@ -35,6 +47,12 @@ struct VmEntry {
     /// Per-VM directory for the QMP socket and snapshot artifacts.
     dir: PathBuf,
     snapshot_seq: u64,
+    /// Currently-active writable qcow2 layer per disk (starts as the
+    /// configured disk images; moves to fresh overlays on snapshot/restore).
+    active_disks: Vec<PathBuf>,
+    /// Snapshot DAG node -> artifacts. Branching = restoring any node and
+    /// snapshotting again (multiple children per parent).
+    snapshots: HashMap<SnapshotId, SnapshotArtifacts>,
 }
 
 /// Hypervisor.framework-accelerated backend for macOS hosts.
@@ -96,6 +114,35 @@ impl HvfBackend {
         }
         Ok(next)
     }
+
+    /// Invocation for `entry` using its currently-active disk layers
+    /// (which move to fresh overlays as snapshots/restores happen).
+    fn invocation_for(&self, entry: &VmEntry) -> Result<invocation::Invocation, HvError> {
+        let mut config = entry.config.clone();
+        config.disks = entry
+            .active_disks
+            .iter()
+            .map(|p| p.to_string_lossy().into_owned())
+            .collect();
+        invocation::build_aarch64_virt(&config, self.accel, &entry.dir.join("qmp.sock"))
+    }
+
+    /// Create a fresh writable qcow2 overlay at `overlay` backed by `base`.
+    fn create_overlay(base: &PathBuf, overlay: &PathBuf) -> Result<(), HvError> {
+        let out = std::process::Command::new("qemu-img")
+            .args(["create", "-f", "qcow2", "-F", "qcow2", "-b"])
+            .arg(base)
+            .arg(overlay)
+            .output()
+            .map_err(|e| HvError::Engine(format!("failed to run qemu-img: {e}")))?;
+        if !out.status.success() {
+            return Err(HvError::Engine(format!(
+                "qemu-img create overlay failed: {}",
+                String::from_utf8_lossy(&out.stderr).trim()
+            )));
+        }
+        Ok(())
+    }
 }
 
 impl Hypervisor for HvfBackend {
@@ -132,6 +179,7 @@ impl Hypervisor for HvfBackend {
         // Validate the invocation up front so misconfiguration (e.g. a
         // non-aarch64 guest) fails at create, not boot.
         invocation::build_aarch64_virt(config, self.accel, &dir.join("qmp.sock"))?;
+        let active_disks = config.disks.iter().map(PathBuf::from).collect();
         vms.insert(
             config.name.clone(),
             VmEntry {
@@ -140,6 +188,8 @@ impl Hypervisor for HvfBackend {
                 runtime: None,
                 dir,
                 snapshot_seq: 0,
+                active_disks,
+                snapshots: HashMap::new(),
             },
         );
         Ok(VmHandle::new(config.name.clone()))
@@ -151,8 +201,7 @@ impl Hypervisor for HvfBackend {
             .get_mut(&vm.id)
             .ok_or_else(|| HvError::VmNotFound(vm.id.clone()))?;
         entry.state.transition(VmOp::Boot)?; // validate before side effects
-        let inv =
-            invocation::build_aarch64_virt(&entry.config, self.accel, &entry.dir.join("qmp.sock"))?;
+        let inv = self.invocation_for(entry)?;
         let mut qemu = QemuVm::spawn(&inv)?;
         qemu.cont()?;
         entry.runtime = Some(qemu);
@@ -204,13 +253,15 @@ impl Hypervisor for HvfBackend {
     }
 
     fn snapshot(&self, vm: &VmHandle, parent: Option<SnapshotId>) -> Result<SnapshotId, HvError> {
-        // v0: the DAG placement (`parent`) is recorded by the caller's
-        // SnapshotStore; the engine captures disk overlays + RAM state.
-        let _ = parent;
         let mut vms = self.vms.lock().unwrap();
         let entry = vms
             .get_mut(&vm.id)
             .ok_or_else(|| HvError::VmNotFound(vm.id.clone()))?;
+        if let Some(p) = &parent {
+            if !entry.snapshots.contains_key(p) {
+                return Err(HvError::SnapshotNotFound(p.0.clone()));
+            }
+        }
         let prior = entry.state;
         Self::transition(entry, VmOp::SnapshotBegin)?;
         entry.snapshot_seq += 1;
@@ -219,23 +270,67 @@ impl Hypervisor for HvfBackend {
             .map(|i| format!("disk{i}"))
             .collect();
         let dir = entry.dir.clone();
+        // The layers active right now freeze as this snapshot's disk
+        // state; QEMU switches writes onto the new `{tag}-disk{i}` overlays.
+        let disk_bases = entry.active_disks.clone();
         let result = entry
             .runtime
             .as_mut()
             .ok_or_else(|| HvError::Engine("VM has no running QEMU process".into()))
             .and_then(|qemu| qemu.snapshot(&disk_nodes, &dir, &tag));
         Self::transition(entry, VmOp::SnapshotEnd(prior))?;
-        result
+        let id = result?;
+        entry.active_disks = disk_nodes
+            .iter()
+            .map(|node| dir.join(format!("{tag}-{node}.qcow2")))
+            .collect();
+        entry.snapshots.insert(
+            id.clone(),
+            SnapshotArtifacts {
+                disk_bases,
+                state_file: dir.join(format!("{tag}-state.bin")),
+                parent,
+            },
+        );
+        Ok(id)
     }
 
-    fn restore(&self, _vm: &VmHandle, _snapshot: SnapshotId) -> Result<(), HvError> {
-        // Deferred to the M3 HVF snapshot-fidelity spike (port plan §5):
-        // restore-from-RAM-state needs `-incoming` plumbing plus vtimer
-        // validation on hvf before we expose it.
-        Err(HvError::NotImplemented {
-            backend: BACKEND,
-            op: "restore",
-        })
+    fn restore(&self, vm: &VmHandle, snapshot: SnapshotId) -> Result<(), HvError> {
+        let mut vms = self.vms.lock().unwrap();
+        let entry = vms
+            .get_mut(&vm.id)
+            .ok_or_else(|| HvError::VmNotFound(vm.id.clone()))?;
+        entry.state.transition(VmOp::Restore)?; // validate before side effects
+        if !entry.snapshots.contains_key(&snapshot) {
+            return Err(HvError::SnapshotNotFound(snapshot.0.clone()));
+        }
+
+        // Tear down any current QEMU (Paused case), then branch: fresh
+        // writable overlays on the snapshot's frozen layers, so restoring
+        // the same node repeatedly never mutates it (git-like branching).
+        if let Some(qemu) = entry.runtime.take() {
+            qemu.quit()?;
+        }
+        entry.snapshot_seq += 1;
+        let branch = format!("branch{}", entry.snapshot_seq);
+        let artifacts = &entry.snapshots[&snapshot];
+        let state_file = artifacts.state_file.clone();
+        let mut overlays = Vec::with_capacity(artifacts.disk_bases.len());
+        for (i, base) in artifacts.disk_bases.iter().enumerate() {
+            let overlay = entry.dir.join(format!("{branch}-disk{i}.qcow2"));
+            Self::create_overlay(base, &overlay)?;
+            overlays.push(overlay);
+        }
+        entry.active_disks = overlays;
+
+        // Boot directly into the saved RAM/device state (instant resume).
+        let inv = self.invocation_for(entry)?.with_incoming_defer();
+        let mut qemu = QemuVm::spawn(&inv)?;
+        qemu.restore_incoming(&state_file)?;
+        qemu.cont()?;
+        entry.runtime = Some(qemu);
+        Self::transition(entry, VmOp::Restore)?;
+        Ok(())
     }
 
     fn delete(&self, vm: VmHandle) -> Result<(), HvError> {
