@@ -6,6 +6,20 @@ This repository contains the **hypervisor abstraction layer (HAL)** scaffold fro
 
 **Beta testers:** start with the [tester guide](docs/tester-guide/README.md) (quickstart, CLI reference, troubleshooting, bug reporting).
 
+## Screenshots
+
+`vmforge info` (host capability probe) and the experimental `vmforge net` port-forward helper:
+
+![vmforge info and net ssh-command output](assets/screenshots/info.png)
+
+`vmforge diagnose` — redacted bug-report bundle covering host, KVM, QEMU, backend, disk and VM state:
+
+![vmforge diagnose output](assets/screenshots/diagnose.png)
+
+QA smoke suite (`qa/smoke/smoke_test.sh`) running the full lifecycle — create → boot → snapshot → restore → shutdown — on a real KVM-accelerated Alpine guest:
+
+![QA smoke suite full lifecycle run](assets/screenshots/smoke.png)
+
 ## Architecture summary
 
 - **Language:** Rust (memory-safe systems code; rust-vmm ecosystem available for a future direct-KVM backend — https://github.com/rust-vmm).
