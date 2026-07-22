@@ -1,0 +1,33 @@
+name: core CI
+
+on:
+  push:
+    branches: [main]
+    paths: ["core/**", ".github/workflows/core-ci.yml"]
+  pull_request:
+    paths: ["core/**", ".github/workflows/core-ci.yml"]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: core
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install QEMU (for qemu-img integration tests)
+        run: sudo apt-get update && sudo apt-get install -y qemu-system-x86 qemu-utils
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: core
+      - name: Format
+        run: cargo fmt --check
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Build
+        run: cargo build --all-targets
+      - name: Test
+        run: cargo test
