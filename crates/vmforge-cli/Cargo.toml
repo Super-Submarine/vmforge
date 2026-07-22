@@ -1,0 +1,15 @@
+[package]
+name = "vmforge-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "vmforge"
+path = "src/main.rs"
+
+[dependencies]
+vmforge-core = { path = "../vmforge-core" }
+vmforge-backend-kvm = { path = "../vmforge-backend-kvm" }
+vmforge-backend-hvf = { path = "../vmforge-backend-hvf" }
