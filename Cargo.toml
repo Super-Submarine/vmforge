@@ -6,6 +6,7 @@ members = [
     "crates/vmforge-engine-qemu",
     "crates/vmforge-backend-hvf",
     "crates/vmforge-cli",
+    "crates/vmforge-bench",
 ]
 
 [workspace.package]

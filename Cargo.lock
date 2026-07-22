@@ -139,6 +139,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "vmforge-bench"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "vmforge-backend-hvf",
+ "vmforge-core",
+ "vmforge-engine-qemu",
+]
+
+[[package]]
 name = "vmforge-cli"
 version = "0.1.0"
 dependencies = [

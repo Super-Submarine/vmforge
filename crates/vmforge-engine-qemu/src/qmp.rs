@@ -15,6 +15,7 @@ use vmforge_core::HvError;
 pub struct QmpClient {
     reader: BufReader<UnixStream>,
     writer: UnixStream,
+    version: (u64, u64),
 }
 
 impl QmpClient {
@@ -27,7 +28,7 @@ impl QmpClient {
                 Ok(s) => break s,
                 Err(e) if Instant::now() < deadline => {
                     let _ = e;
-                    std::thread::sleep(Duration::from_millis(50));
+                    std::thread::sleep(Duration::from_millis(5));
                 }
                 Err(e) => {
                     return Err(HvError::Engine(format!(
@@ -44,6 +45,7 @@ impl QmpClient {
         let mut client = Self {
             reader: BufReader::new(stream),
             writer,
+            version: (0, 0),
         };
         // Greeting, then capabilities negotiation.
         let greeting = client.read_message()?;
@@ -52,8 +54,18 @@ impl QmpClient {
                 "unexpected QMP greeting: {greeting}"
             )));
         }
+        let qemu = &greeting["QMP"]["version"]["qemu"];
+        client.version = (
+            qemu["major"].as_u64().unwrap_or(0),
+            qemu["minor"].as_u64().unwrap_or(0),
+        );
         client.execute("qmp_capabilities", None)?;
         Ok(client)
+    }
+
+    /// QEMU `(major, minor)` version reported in the QMP greeting.
+    pub fn qemu_version(&self) -> (u64, u64) {
+        self.version
     }
 
     /// Execute a QMP command and return its `return` payload.
