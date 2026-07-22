@@ -154,6 +154,75 @@ Exit codes on that branch: 0 success, 1 any error, 2 usage error.
 Snapshots there are **live** (RAM + device + disk via QMP savevm/loadvm) when
 the VM runs, disk-only when stopped.
 
+### Storage v1.2: whole-VM backup/restore (PR #28)
+
+Two additive `vmforge-storage` verbs — portable single-file VM bundles with
+manifest checksums and restore-time health checks. Additive under the freeze
+(§2); experimental until promoted. Guide: [Backup & restore](backup-restore.md).
+
+```
+vmforge-storage backup  <vm> <bundle>            [--snapshot NAME]     # .tar, or .tar.gz/.tgz to compress
+vmforge-storage restore <bundle> [--as NEW_VM] [--force]
+```
+
+Both honor the frozen global flags (`--home`, `--json`, `--contract-version`)
+and exit codes 0/1/2.
+
+> **Freeze note:** the storage v1.1 verbs mentioned in some engineering
+> updates — disk `compact` and image `export` — are **not present** on `main`
+> or any pushed branch. Only `check` (v1, frozen) and `import` (v1, frozen)
+> exist. This reference does not document verbs that have no implementation.
+
+### Networking v1.2: `vmforge net` port forwarding (PR #15)
+
+`--forward` specs (`[tcp|udp:][HOSTIP:]HOSTPORT:GUESTPORT`, repeatable,
+loopback-bound by default) plus two Rust-CLI helper verbs. Experimental under
+freeze doc §4. Guide: [Port forwarding](port-forwarding.md).
+
+```
+vmforge net args        [--forward SPEC]... [--id ID] [--model MODEL] [--mac MAC] [--json]   # print the QEMU argv
+vmforge net ssh-command (--forward SPEC | --host-port PORT) [--user USER]
+```
+
+### Networking v1.3: `vmforge-net doctor` (branch only — **no PR open yet**)
+
+Connectivity diagnostics on the Python `vmforge-net` CLI
+(branch `devin/1784739117-net-doctor`). Experimental. Guide:
+[Diagnostics](diagnostics.md#vmforge-net-doctor--guest-connectivity-branch-no-pr-yet).
+
+```
+vmforge-net doctor [--json] [--vm NAME] [--config FILE] [--guest-exec CMD] [--timeout SECS] [--home PATH]
+```
+
+Exit codes: 0 no failures, 1 at least one FAIL, 2 usage error.
+
+### Guest tools v1.2: `vmforge diagnose` (PR #17)
+
+Redacted host/VM diagnostics bundle for bug reports. Additive; experimental
+until promoted. Guide: [Diagnostics](diagnostics.md#vmforge-diagnose--bug-report-bundle-pr-17).
+
+```
+vmforge diagnose [--vm NAME] [--output FILE(.txt|.tar)] [--home PATH]
+```
+
+### Engine error taxonomy + `vmforge doctor` (PR #30)
+
+An 11-class structured error taxonomy with stable codes, exit codes 10–20,
+JSON error output on stderr, and a host-preflight verb. Additive (exit codes
+0/1/2 keep their frozen meanings; 10–20 was reserved); the PR notes that
+`doctor` and the 10–20 range must be added to the freeze manifest on
+promotion. Guides: [Diagnostics](diagnostics.md#vmforge-doctor--host-preflight-pr-30),
+[Troubleshooting by error code](error-codes.md).
+
+```
+vmforge doctor [--json] [--disk PATH]...
+```
+
+### Shared folders (guest tools v1.3) — **not in the repository**
+
+Announced (virtiofs/9p) but no code or branch has been pushed; there is
+nothing to document. Status page: [Shared folders](shared-folders.md).
+
 These shapes are **experimental under the CLI freeze**
 ([freeze doc §1.3](../cli-freeze-v1.0-beta.md)) and are documented here only
 so you recognize them when they land; on merge they can be promoted to stable
