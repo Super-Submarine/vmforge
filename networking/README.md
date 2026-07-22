@@ -49,6 +49,21 @@ Forward specs are `proto:hostip:hostport-guestip:guestport` (guest IP may be
 empty for the DHCP address) or the shorthand `hostport:guestport` (TCP,
 bound to 127.0.0.1).
 
+### `vmforge-net doctor` (EXPERIMENTAL)
+
+Guest-connectivity diagnostics with PASS/FAIL/SKIP results and remediation
+hints — tun/tap availability, bridge-helper permissions, NAT firewall
+tooling, per-VM config validity, port-forward health, MTU sanity, and
+(with a `--guest-exec` bridge) guest→host/internet reachability and DNS.
+`--json` emits a machine-readable report that `vmforge diagnose` embeds in
+its bundle. Full check reference:
+[`docs/tester-guide/network-doctor.md`](../docs/tester-guide/network-doctor.md).
+
+```console
+$ vmforge-net doctor            # human-readable table
+$ vmforge-net doctor --json     # for tooling / diagnose bundle
+```
+
 Note on QMP hot-add: QEMU exposes no native QMP command for user-mode
 hostfwd management, so `QMPClient` uses the QMP `human-monitor-command`
 passthrough to run the HMP `hostfwd_add`/`hostfwd_remove` commands. This is

@@ -63,7 +63,8 @@ struct VmReport {
 }
 
 pub fn run(opts: &DiagnoseOptions) -> i32 {
-    let sections = collect_host_sections(&opts.home);
+    let net_doctor = net_doctor_json(&opts.home);
+    let sections = collect_host_sections(&opts.home, net_doctor.as_deref());
     let vms = match collect_vms(&opts.home, opts.vm.as_deref()) {
         Ok(vms) => vms,
         Err(msg) => {
@@ -79,7 +80,7 @@ pub fn run(opts: &DiagnoseOptions) -> i32 {
         }
         Some(path) => {
             let result = if path.extension().is_some_and(|e| e == "tar") {
-                write_tar_bundle(path, &report, &vms)
+                write_tar_bundle(path, &report, &vms, net_doctor.as_deref())
             } else {
                 fs::write(path, &report).map_err(|e| e.to_string())
             };
@@ -97,7 +98,12 @@ pub fn run(opts: &DiagnoseOptions) -> i32 {
     0
 }
 
-fn write_tar_bundle(path: &Path, report: &str, vms: &[VmReport]) -> Result<(), String> {
+fn write_tar_bundle(
+    path: &Path,
+    report: &str,
+    vms: &[VmReport],
+    net_doctor: Option<&str>,
+) -> Result<(), String> {
     let mtime = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs())
@@ -106,6 +112,10 @@ fn write_tar_bundle(path: &Path, report: &str, vms: &[VmReport]) -> Result<(), S
     let mut tar = TarWriter::new(file);
     tar.append("report.txt", report.as_bytes(), mtime)
         .map_err(|e| e.to_string())?;
+    if let Some(doctor) = net_doctor {
+        tar.append("net-doctor.json", doctor.as_bytes(), mtime)
+            .map_err(|e| e.to_string())?;
+    }
     for vm in vms {
         for log in &vm.logs {
             let entry = format!("vms/{}/logs/{}", vm.name, log.file_name);
@@ -122,7 +132,7 @@ fn write_tar_bundle(path: &Path, report: &str, vms: &[VmReport]) -> Result<(), S
 // Host sections
 // ---------------------------------------------------------------------------
 
-fn collect_host_sections(home: &Path) -> Vec<Section> {
+fn collect_host_sections(home: &Path, net_doctor: Option<&str>) -> Vec<Section> {
     vec![
         Section {
             title: "version".into(),
@@ -152,7 +162,37 @@ fn collect_host_sections(home: &Path) -> Vec<Section> {
             title: "config".into(),
             body: config_info(home),
         },
+        Section {
+            title: "network doctor".into(),
+            body: match net_doctor {
+                Some(json) => json.to_string(),
+                None => "vmforge-net not installed or doctor produced no \
+                         report (experimental; pip install networking/ to \
+                         include guest-connectivity checks)\n"
+                    .to_string(),
+            },
+        },
     ]
+}
+
+/// Run `vmforge-net doctor --json` (experimental networking CLI) if it is
+/// installed. Exit code 1 still carries a full report (it means some checks
+/// failed), so accept any exit as long as stdout parses as one JSON object.
+fn net_doctor_json(home: &Path) -> Option<String> {
+    let output = Command::new("vmforge-net")
+        .arg("doctor")
+        .arg("--json")
+        .arg("--home")
+        .arg(home)
+        .output()
+        .ok()?;
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let trimmed = stdout.trim();
+    if trimmed.starts_with('{') && trimmed.ends_with('}') {
+        Some(redact_text(trimmed) + "\n")
+    } else {
+        None
+    }
 }
 
 fn host_info() -> String {
@@ -612,7 +652,7 @@ mod tests {
         let home = fixture_home();
         let vms = collect_vms(&home, None).unwrap();
         assert_eq!(vms.len(), 1);
-        let sections = collect_host_sections(&home);
+        let sections = collect_host_sections(&home, None);
         let report = render_report(&sections, &vms, None);
         assert!(report.contains("-- vm: demo --"));
         assert!(report.contains("disk: disk0"));
@@ -640,7 +680,7 @@ mod tests {
         fs::create_dir_all(&home).unwrap();
         let vms = collect_vms(&home, None).unwrap();
         assert!(vms.is_empty());
-        let report = render_report(&collect_host_sections(&home), &vms, None);
+        let report = render_report(&collect_host_sections(&home, None), &vms, None);
         assert!(report.contains("(no VMs found)"));
         fs::remove_dir_all(&home).ok();
     }

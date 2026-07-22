@@ -128,6 +128,92 @@ fn tar_output_bundles_report_and_logs() {
     fs::remove_dir_all(&home).ok();
 }
 
+/// Put a fake `vmforge-net` on PATH that emits a canned doctor JSON report.
+#[cfg(unix)]
+fn fake_vmforge_net(dir: &PathBuf, json: &str) -> String {
+    use std::os::unix::fs::PermissionsExt;
+    let bin_dir = dir.join("bin");
+    fs::create_dir_all(&bin_dir).unwrap();
+    let script = bin_dir.join("vmforge-net");
+    fs::write(&script, format!("#!/bin/sh\necho '{json}'\nexit 1\n")).unwrap();
+    fs::set_permissions(&script, fs::Permissions::from_mode(0o755)).unwrap();
+    format!(
+        "{}:{}",
+        bin_dir.display(),
+        std::env::var("PATH").unwrap_or_default()
+    )
+}
+
+#[cfg(unix)]
+#[test]
+fn diagnose_bundles_net_doctor_json_when_available() {
+    let home = fixture_home("netdoc");
+    let json = r#"{"tool": "vmforge-net doctor", "schema": 1, "stability": "experimental", "checks": [], "summary": {"pass": 0, "fail": 1, "skip": 0}}"#;
+    let path = fake_vmforge_net(&home, json);
+
+    let out = Command::new(env!("CARGO_BIN_EXE_vmforge"))
+        .arg("diagnose")
+        .arg("--home")
+        .arg(&home)
+        .env("PATH", &path)
+        .output()
+        .expect("run vmforge diagnose");
+    assert!(out.status.success());
+    let report = String::from_utf8_lossy(&out.stdout);
+    assert!(report.contains("-- network doctor --"));
+    assert!(report.contains("vmforge-net doctor"));
+    assert!(report.contains("\"stability\": \"experimental\""));
+
+    // The JSON report also lands as its own bundle entry.
+    let bundle = home.join("diag.tar");
+    let out = Command::new(env!("CARGO_BIN_EXE_vmforge"))
+        .arg("diagnose")
+        .arg("--home")
+        .arg(&home)
+        .arg("--output")
+        .arg(&bundle)
+        .env("PATH", &path)
+        .output()
+        .expect("run vmforge diagnose --output");
+    assert!(out.status.success());
+    let extract = home.join("extract");
+    fs::create_dir_all(&extract).unwrap();
+    // PATH override above removed system dirs; call tar by absolute path.
+    let tar_bin = ["/usr/bin/tar", "/bin/tar"]
+        .into_iter()
+        .find(|p| std::path::Path::new(p).exists())
+        .expect("system tar");
+    let status = Command::new(tar_bin)
+        .arg("-xf")
+        .arg(&bundle)
+        .arg("-C")
+        .arg(&extract)
+        .status()
+        .expect("system tar");
+    assert!(status.success());
+    let doctor = fs::read_to_string(extract.join("net-doctor.json")).unwrap();
+    assert!(doctor.contains("\"tool\": \"vmforge-net doctor\""));
+
+    fs::remove_dir_all(&home).ok();
+}
+
+#[test]
+fn diagnose_degrades_without_vmforge_net() {
+    let home = fixture_home("nonet");
+    let out = Command::new(env!("CARGO_BIN_EXE_vmforge"))
+        .arg("diagnose")
+        .arg("--home")
+        .arg(&home)
+        .env("PATH", home.join("empty-bin"))
+        .output()
+        .expect("run vmforge diagnose");
+    assert!(out.status.success());
+    let report = String::from_utf8_lossy(&out.stdout);
+    assert!(report.contains("-- network doctor --"));
+    assert!(report.contains("vmforge-net not installed"));
+    fs::remove_dir_all(&home).ok();
+}
+
 #[test]
 fn text_output_writes_plain_file() {
     let home = fixture_home("txt");

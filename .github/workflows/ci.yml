@@ -26,6 +26,18 @@ jobs:
       - name: Test
         run: cargo test --workspace
 
+  networking-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install vmforge-net + pytest
+        run: pip install ./networking pytest
+      - name: Networking tests (natgen + doctor, no KVM)
+        run: python -m pytest networking/tests/ -q
+
   hygiene:
     runs-on: ubuntu-latest
     steps:

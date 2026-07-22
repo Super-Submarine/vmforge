@@ -4,6 +4,7 @@ Subcommands:
     args           Print QEMU args for a NAT NIC (one per line, or shell-quoted).
     hostfwd-add    Hot-add a port forward on a running VM via QMP.
     hostfwd-remove Hot-remove a port forward on a running VM via QMP.
+    doctor         Run guest-connectivity diagnostics (EXPERIMENTAL).
 """
 
 from __future__ import annotations
@@ -12,7 +13,9 @@ import argparse
 import json
 import shlex
 import sys
+from pathlib import Path
 
+from . import doctor as doctor_mod
 from .config import NatConfig, PortForward
 from .natgen import build_qemu_args
 from .qmp import QMPClient, QMPError
@@ -68,7 +71,40 @@ def main(argv: list[str] | None = None) -> int:
     p_del = sub.add_parser("hostfwd-remove", help="hot-remove a port forward via QMP")
     _add_qmp_opts(p_del)
 
+    p_doc = sub.add_parser(
+        "doctor",
+        help="run guest-connectivity diagnostics (EXPERIMENTAL)",
+        description="Run host/VM networking checks with PASS/FAIL/SKIP "
+        "results and remediation hints. Experimental surface: output "
+        "shapes may change between wave-1 builds.",
+    )
+    p_doc.add_argument(
+        "--home", type=Path, default=None,
+        help="VMForge home (default: $VMFORGE_HOME or ~/.vmforge)",
+    )
+    p_doc.add_argument("--vm", help="scope per-VM checks to this VM name")
+    p_doc.add_argument(
+        "--config", type=Path, default=None,
+        help="validate this NAT JSON config instead of scanning per-VM configs",
+    )
+    p_doc.add_argument(
+        "--guest-exec", default=None, metavar="CMD",
+        help="host command prefix that runs its argument inside the guest "
+        "(e.g. 'vmforge guest exec myvm --'); enables guest-side NAT/DNS probes",
+    )
+    p_doc.add_argument(
+        "--timeout", type=float, default=3.0,
+        help="per-probe timeout in seconds (default: 3)",
+    )
+    p_doc.add_argument(
+        "--json", action="store_true",
+        help="emit one machine-readable JSON document on stdout",
+    )
+
     args = parser.parse_args(argv)
+
+    if args.cmd == "doctor":
+        return _run_doctor(args)
 
     if args.cmd == "args":
         cfg = _load_config(args)
@@ -94,6 +130,28 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {e}", file=sys.stderr)
         return 1
     return 0
+
+
+def _run_doctor(args: argparse.Namespace) -> int:
+    print(
+        "vmforge-net doctor is EXPERIMENTAL: not part of the wave-1 CLI "
+        "freeze; output may change.",
+        file=sys.stderr,
+    )
+    opts = doctor_mod.DoctorOptions(
+        vm=args.vm,
+        config=args.config,
+        guest_exec=args.guest_exec,
+        timeout=args.timeout,
+    )
+    if args.home is not None:
+        opts.home = args.home
+    results = doctor_mod.run_doctor(opts)
+    if args.json:
+        print(json.dumps(doctor_mod.to_json(results), indent=2))
+    else:
+        print(doctor_mod.render_table(results), end="")
+    return doctor_mod.exit_code(results)
 
 
 if __name__ == "__main__":
