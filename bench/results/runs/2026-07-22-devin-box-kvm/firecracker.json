@@ -1,0 +1,57 @@
+{
+  "stack": "Firecracker (KVM microVM, snapshot/restore API)",
+  "guest": "fc-vmlinux + fc-rootfs.ext4 (Ubuntu 22.04 CI rootfs)",
+  "mem_mb": 512,
+  "iterations": [
+    {
+      "boot_s": 2.1000733439998385,
+      "snapshot_create_s": 0.695060445000081,
+      "storage_overhead_bytes": 536886441,
+      "snapshot_restore_s": 0.023403392000091117,
+      "resume_from_disk_s": 0.023403392000091117
+    },
+    {
+      "boot_s": 2.1293816919999244,
+      "snapshot_create_s": 0.6484112910000022,
+      "storage_overhead_bytes": 536886441,
+      "snapshot_restore_s": 0.0230571530000816,
+      "resume_from_disk_s": 0.0230571530000816
+    },
+    {
+      "boot_s": 2.02885887299999,
+      "snapshot_create_s": 0.6437501969999175,
+      "storage_overhead_bytes": 536886441,
+      "snapshot_restore_s": 0.022999531000095885,
+      "resume_from_disk_s": 0.022999531000095885
+    },
+    {
+      "boot_s": 2.1178691190000336,
+      "snapshot_create_s": 0.6486916399999245,
+      "storage_overhead_bytes": 536886441,
+      "snapshot_restore_s": 0.023005769999826953,
+      "resume_from_disk_s": 0.023005769999826953
+    },
+    {
+      "boot_s": 2.099261780000006,
+      "snapshot_create_s": 0.6950897829999576,
+      "storage_overhead_bytes": 536886441,
+      "snapshot_restore_s": 0.02282141499995305,
+      "resume_from_disk_s": 0.02282141499995305
+    }
+  ],
+  "machine": {
+    "hostname": "devin-box",
+    "kernel": "5.15.200",
+    "os": "Ubuntu 22.04.5 LTS",
+    "cpu_model": "Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz",
+    "cpus": 8,
+    "mem_total_kb": 32881112,
+    "kvm_available": true,
+    "qemu_version": "QEMU emulator version 6.2.0 (Debian 1:6.2+dfsg-2ubuntu6.31)",
+    "qemu_img_version": "qemu-img version 6.2.0 (Debian 1:6.2+dfsg-2ubuntu6.31)",
+    "virtualbox_version": "not available",
+    "firecracker_version": "Firecracker v1.10.1",
+    "disk": "/dev/root      ext4  122G",
+    "timestamp_utc": "2026-07-22T16:33:36Z"
+  }
+}

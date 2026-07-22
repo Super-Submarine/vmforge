@@ -1,0 +1,6 @@
+{
+  "stack": "VirtualBox",
+  "status": "blocked",
+  "reason": "VBoxManage not installed",
+  "iterations": []
+}
