@@ -4,6 +4,8 @@ Desktop virtualization to rival VMware Workstation/Fusion and Parallels: instant
 
 This repository contains the **hypervisor abstraction layer (HAL)** scaffold from the Sprint 0/1 architecture spike. Full design: [`docs/architecture.md`](docs/architecture.md).
 
+**Beta testers:** start with the [tester guide](docs/tester-guide/README.md) (quickstart, CLI reference, troubleshooting, bug reporting).
+
 ## Architecture summary
 
 - **Language:** Rust (memory-safe systems code; rust-vmm ecosystem available for a future direct-KVM backend — https://github.com/rust-vmm).
@@ -21,7 +23,7 @@ crates/
   vmforge-core/          Hypervisor trait, VmConfig/VmState FSM, SnapshotStore, errors
   vmforge-backend-kvm/   Linux KVM backend (stub)
   vmforge-backend-hvf/   macOS Hypervisor.framework backend (stub)
-  vmforge-cli/           `vmforge` CLI (scaffold: `vmforge info`)
+  vmforge-cli/           `vmforge` CLI (`vmforge info`, `vmforge diagnose`)
 docs/architecture.md     Design doc: components, state machine, licensing, risks
 ```
 
@@ -33,6 +35,7 @@ cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --all --check
 cargo run -p vmforge-cli -- info
+cargo run -p vmforge-cli -- diagnose   # redacted bug-report bundle, see docs/diagnose.md
 ```
 
 CI (GitHub Actions) runs fmt + clippy + build + test on every push/PR.

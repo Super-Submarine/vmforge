@@ -13,3 +13,4 @@ path = "src/main.rs"
 vmforge-core = { path = "../vmforge-core" }
 vmforge-backend-kvm = { path = "../vmforge-backend-kvm" }
 vmforge-backend-hvf = { path = "../vmforge-backend-hvf" }
+serde_json.workspace = true

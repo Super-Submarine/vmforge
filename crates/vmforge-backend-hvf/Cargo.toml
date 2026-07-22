@@ -7,3 +7,4 @@ repository.workspace = true
 
 [dependencies]
 vmforge-core = { path = "../vmforge-core" }
+vmforge-engine-qemu = { path = "../vmforge-engine-qemu" }

@@ -128,6 +128,7 @@ name = "vmforge-backend-hvf"
 version = "0.1.0"
 dependencies = [
  "vmforge-core",
+ "vmforge-engine-qemu",
 ]
 
 [[package]]
@@ -141,6 +142,7 @@ dependencies = [
 name = "vmforge-cli"
 version = "0.1.0"
 dependencies = [
+ "serde_json",
  "vmforge-backend-hvf",
  "vmforge-backend-kvm",
  "vmforge-core",
@@ -153,6 +155,14 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+]
+
+[[package]]
+name = "vmforge-engine-qemu"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "vmforge-core",
 ]
 
 [[package]]
