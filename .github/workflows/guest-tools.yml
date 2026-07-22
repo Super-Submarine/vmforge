@@ -1,0 +1,73 @@
+name: Guest tools
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint-and-unit:
+    name: lint + protocol unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install tools
+        run: pip install ruff pytest
+      - name: Lint (ruff)
+        run: ruff check guest-tools
+      - name: Protocol unit + golden-transcript tests
+        run: pytest guest-tools/tests -q --ignore=guest-tools/tests/.work
+
+  ga-smoke:
+    name: agent smoke (${{ matrix.mode }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mode: auto   # KVM when the runner exposes /dev/kvm, else TCG
+            force_tcg: '0'
+          - mode: tcg    # always exercise the TCG fallback path
+            force_tcg: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install QEMU
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q qemu-system-x86 qemu-utils genisoimage
+
+      - name: Enable KVM access
+        if: matrix.force_tcg == '0'
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod a+rw /dev/kvm
+            echo "KVM available"
+          else
+            echo "No /dev/kvm — will fall back to TCG"
+          fi
+
+      - name: Cache guest image
+        uses: actions/cache@v4
+        with:
+          path: guest-tools/tests/.work/*.qcow2
+          key: guest-image-alpine-3.20.3
+
+      - name: End-to-end agent smoke (boot Alpine + wait-ready/info/net-info/exec/shutdown)
+        env:
+          FORCE_TCG: ${{ matrix.force_tcg }}
+        run: guest-tools/tests/ga_smoke.sh
+
+      - name: Upload serial + agent logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ga-smoke-logs-${{ matrix.mode }}
+          path: guest-tools/tests/.work/serial-*.log
+          if-no-files-found: ignore

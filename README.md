@@ -23,7 +23,7 @@ crates/
   vmforge-core/          Hypervisor trait, VmConfig/VmState FSM, SnapshotStore, errors
   vmforge-backend-kvm/   Linux KVM backend (stub)
   vmforge-backend-hvf/   macOS Hypervisor.framework backend (stub)
-  vmforge-cli/           `vmforge` CLI (scaffold: `vmforge info`)
+  vmforge-cli/           `vmforge` CLI (`vmforge info`, `vmforge diagnose`)
 docs/architecture.md     Design doc: components, state machine, licensing, risks
 ```
 
@@ -35,6 +35,7 @@ cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --all --check
 cargo run -p vmforge-cli -- info
+cargo run -p vmforge-cli -- diagnose   # redacted bug-report bundle, see docs/diagnose.md
 ```
 
 CI (GitHub Actions) runs fmt + clippy + build + test on every push/PR.

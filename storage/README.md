@@ -61,6 +61,10 @@ vmforge-storage delete  <vm> <disk> [--force]
 vmforge-storage info    <vm> <disk>          # full backing chain
 vmforge-storage check   <vm> <disk> [--repair]
 
+# whole-VM backup/restore (portable bundle; see docs/tester-guide/backup-restore.md)
+vmforge-storage backup  <vm> <bundle-path> [--snapshot <name>]
+vmforge-storage restore <bundle-path> [--as <new-vm>] [--force]
+
 # snapshot tree (offline)
 vmforge-storage snapshot create <vm> <disk> <name>
 vmforge-storage snapshot list   <vm> <disk>      # renders the tree; * marks current

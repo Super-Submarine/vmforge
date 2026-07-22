@@ -5,7 +5,11 @@ Two required workflows gate merges to `main` (see `docs/m1-integration-plan.md` 
 ## `ci.yml`
 - **rust**: `cargo fmt --check`, `cargo clippy -D warnings`, `cargo build`, `cargo test` on the `crates/` workspace.
 - **hygiene**: rejects committed build artifacts (`__pycache__/`, `*.pyc`, `*.egg-info/`, `target/`).
-- A **python** job (`ruff check` + `pytest` per Python subsystem) is added when the first Python subsystem (`storage/`, `networking/`, `guest-tools/`) merges.
+- A **python** job (`ruff check` + `pytest` per Python subsystem) is added when the first Python subsystem (`storage/`, `networking/`, `guest-tools/`) merges. `guest-tools/` is covered by `guest-tools.yml` (below).
+
+## `guest-tools.yml`
+- **lint + protocol unit tests**: `ruff check guest-tools` + `pytest guest-tools/tests` (protocol conformance incl. the golden transcript `guest-tools/tests/golden_transcript.jsonl`).
+- **agent smoke** (`auto`/`tcg` matrix, same KVM/TCG selection as `qa-smoke.yml`): `guest-tools/tests/ga_smoke.sh` boots Alpine with the agent installed via cloud-init and exercises wait-ready, `info`/`net-info`/`interfaces`, `exec` and `shutdown --wait` with hard-stop fallback over the real virtio-serial channel.
 
 ## `qa-smoke.yml`
 Boot + snapshot/restore smoke suite (`qa/smoke/smoke_test.sh`), two-job matrix on every PR and push to `main`:

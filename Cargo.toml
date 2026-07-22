@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/vmforge-core",
     "crates/vmforge-backend-kvm",
+    "crates/vmforge-engine-qemu",
     "crates/vmforge-backend-hvf",
     "crates/vmforge-cli",
 ]

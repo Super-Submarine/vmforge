@@ -1,0 +1,42 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: vmforge
+Source: https://github.com/Super-Submarine/vmforge
+
+Comment:
+ This machine-readable copyright file is installed by the .deb package to
+ /usr/share/doc/vmforge/copyright (Debian Policy 12.5,
+ https://www.debian.org/doc/debian-policy/ch-docs.html#copyright-information).
+ The full third-party attribution file (legal/THIRD-PARTY-NOTICES.md) is
+ installed alongside it in /usr/share/doc/vmforge/.
+ .
+ QEMU is NOT contained in this package. vmforge invokes the distro-provided
+ qemu-system-x86 / qemu-img binaries as separate processes (declared via
+ Depends); no GPL-2.0 code is linked into or redistributed with the vmforge
+ binary.
+
+Files: *
+Copyright: 2026 VMForge / Super-Submarine
+License: LicenseRef-Proprietary
+ Proprietary. The VMForge application binary in this package is licensed
+ under the VMForge Beta EULA (see /usr/share/doc/vmforge/ and the download
+ page). Third-party open-source components compiled into the binary are
+ licensed under their own terms; see THIRD-PARTY-NOTICES.md in this
+ directory. Nothing in the EULA restricts rights granted by those licenses.
+
+License: Apache-2.0
+ Statically linked Rust crates (itoa, proc-macro2, quote, serde, serde_core,
+ serde_derive, serde_json, syn, thiserror, thiserror-impl, unicode-ident) and
+ the Rust standard library are used under the Apache License 2.0.
+ .
+ On Debian systems, the complete text of the Apache License 2.0 can be found
+ in /usr/share/common-licenses/Apache-2.0.
+
+License: MIT
+ Statically linked Rust crates memchr (Copyright 2015 Andrew Gallant) and
+ zmij (Copyright David Tolnay) are used under the MIT license; the full text
+ is reproduced in THIRD-PARTY-NOTICES.md in this directory.
+
+License: Unicode-3.0
+ Unicode data tables embedded via the unicode-ident crate are used under the
+ Unicode License v3 (Copyright 1991-2025 Unicode, Inc.); the full text is
+ reproduced in THIRD-PARTY-NOTICES.md in this directory.

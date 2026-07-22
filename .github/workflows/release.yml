@@ -1,0 +1,111 @@
+name: Release
+
+# Release pipeline v1 (Linux wave 1): GPG-signed .deb + .AppImage + SHA256SUMS
+# + third-party source bundle, attached to a draft GitHub release.
+# See docs/release-pipeline.md for the packaging/signing/GPL plan.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Resolve version
+        id: ver
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Build release binary
+        run: cargo build --release -p vmforge-cli
+
+      - name: Build .deb
+        run: packaging/build-deb.sh "${{ steps.ver.outputs.version }}" dist
+
+      - name: Build .AppImage
+        run: packaging/build-appimage.sh "${{ steps.ver.outputs.version }}" dist
+
+      - name: Build third-party source bundle (GPL §3(a) input)
+        run: packaging/build-thirdparty-src.sh "${{ steps.ver.outputs.version }}" dist
+
+      - name: Import release GPG key (or generate flagged placeholder)
+        id: gpg
+        env:
+          VMFORGE_RELEASE_GPG_PRIVATE_KEY: ${{ secrets.VMFORGE_RELEASE_GPG_PRIVATE_KEY }}
+          VMFORGE_RELEASE_GPG_PASSPHRASE: ${{ secrets.VMFORGE_RELEASE_GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          if [ -n "${VMFORGE_RELEASE_GPG_PRIVATE_KEY:-}" ]; then
+            printf '%s' "$VMFORGE_RELEASE_GPG_PRIVATE_KEY" | gpg --batch --import
+            echo "placeholder=false" >> "$GITHUB_OUTPUT"
+            echo "Imported provisioned release key."
+          else
+            # PLACEHOLDER SIGNING: the real release key
+            # (VMFORGE_RELEASE_GPG_PRIVATE_KEY) is not provisioned yet
+            # (requested from IT Security via the secrets registry).
+            # This ephemeral key exists only for this workflow run and
+            # MUST NOT be trusted for production releases.
+            gpg --batch --gen-key <<'EOF'
+          Key-Type: eddsa
+          Key-Curve: ed25519
+          Name-Real: VMForge PLACEHOLDER release key (DO NOT TRUST)
+          Name-Email: release-placeholder@vmforge.invalid
+          Expire-Date: 7d
+          %no-protection
+          %commit
+          EOF
+            echo "placeholder=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::No VMFORGE_RELEASE_GPG_PRIVATE_KEY secret; artifacts are signed with an EPHEMERAL PLACEHOLDER key."
+          fi
+
+      - name: Checksums + detached signatures
+        working-directory: dist
+        env:
+          VMFORGE_RELEASE_GPG_PASSPHRASE: ${{ secrets.VMFORGE_RELEASE_GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          sha256sum * > SHA256SUMS
+          GPG_ARGS=(--batch --yes --armor --detach-sign)
+          if [ -n "${VMFORGE_RELEASE_GPG_PASSPHRASE:-}" ]; then
+            GPG_ARGS+=(--pinentry-mode loopback --passphrase-fd 0)
+          fi
+          for f in *; do
+            case "$f" in *.asc) continue;; esac
+            if [ -n "${VMFORGE_RELEASE_GPG_PASSPHRASE:-}" ]; then
+              printf '%s' "$VMFORGE_RELEASE_GPG_PASSPHRASE" | gpg "${GPG_ARGS[@]}" "$f"
+            else
+              gpg "${GPG_ARGS[@]}" "$f"
+            fi
+          done
+          gpg --armor --export > vmforge-release-signing-key.pub.asc
+          ls -l
+
+      - name: Create draft GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PLACEHOLDER: ${{ steps.gpg.outputs.placeholder }}
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.ver.outputs.tag }}"
+          NOTES="VMForge ${TAG} — Linux wave-1 artifacts (.deb + .AppImage), SHA-256 checksums, detached GPG signatures, and the third-party source bundle (GPL §3(a)). See docs/release-pipeline.md."
+          if [ "$PLACEHOLDER" = "true" ]; then
+            NOTES="$NOTES
+
+          > **WARNING — PLACEHOLDER SIGNING:** these artifacts are signed with an ephemeral placeholder GPG key because the production release key is not yet provisioned. Do not distribute externally; signatures prove pipeline mechanics only."
+          fi
+          gh release create "$TAG" --draft --title "VMForge $TAG" --notes "$NOTES" dist/*
