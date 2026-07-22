@@ -3,14 +3,14 @@
 //! Measures the resume/boot hot paths of the QEMU engine through the
 //! `Hypervisor` trait, the same way the product drives it:
 //!
-//! - `boot_ready_ms`      cold boot: spawn QEMU + QMP handshake + `cont`
-//!                        until the run state is `running`
-//! - `snapshot_save_ms`   live snapshot (pause window + external qcow2
-//!                        overlay + RAM state to file + resume)
-//! - `restore_resume_ms`  instant resume: fresh QEMU with `-incoming
-//!                        defer`, load RAM state, `cont` -> `running`
-//! - `branch_switch_ms`   restore to a *different* snapshot DAG node
-//!                        (fresh overlays on that node's frozen layers)
+//! - `boot_ready_ms`: cold boot — spawn QEMU + QMP handshake + `cont`
+//!   until the run state is `running`
+//! - `snapshot_save_ms`: live snapshot (pause window + external qcow2
+//!   overlay + RAM state to file + resume)
+//! - `restore_resume_ms`: instant resume — fresh QEMU with `-incoming
+//!   defer`, load RAM state, `cont` -> `running`
+//! - `branch_switch_ms`: restore to a *different* snapshot DAG node
+//!   (fresh overlays on that node's frozen layers)
 //!
 //! Runs n iterations (default 5, `--iterations`) and reports medians and
 //! p95 as machine-readable JSON plus a markdown summary. With
