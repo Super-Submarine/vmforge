@@ -1,0 +1,17 @@
+[package]
+name = "vmforge-bench"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Engine performance benchmark harness: boot, snapshot save, instant-resume, branch switch"
+
+[dependencies]
+vmforge-core = { path = "../vmforge-core" }
+vmforge-backend-hvf = { path = "../vmforge-backend-hvf" }
+vmforge-engine-qemu = { path = "../vmforge-engine-qemu" }
+serde_json = { workspace = true }
+
+[[bin]]
+name = "vmforge-bench"
+path = "src/main.rs"

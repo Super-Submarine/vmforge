@@ -24,6 +24,7 @@ crates/
   vmforge-backend-kvm/   Linux KVM backend (stub)
   vmforge-backend-hvf/   macOS Hypervisor.framework backend (stub)
   vmforge-cli/           `vmforge` CLI (`vmforge info`, `vmforge diagnose`)
+  vmforge-bench/         Engine perf benchmark harness + CI regression guard
 docs/architecture.md     Design doc: components, state machine, licensing, risks
 ```
 
@@ -36,6 +37,7 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --all --check
 cargo run -p vmforge-cli -- info
 cargo run -p vmforge-cli -- diagnose   # redacted bug-report bundle, see docs/diagnose.md
+cargo run --release -p vmforge-bench   # engine perf benchmarks, see docs/engine-benchmarks.md
 ```
 
 CI (GitHub Actions) runs fmt + clippy + build + test on every push/PR.

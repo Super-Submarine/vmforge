@@ -2,6 +2,7 @@
 
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
+use std::io::Read;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
@@ -119,12 +120,12 @@ impl QemuVm {
         }
 
         let state_file = state_dir.join(format!("{tag}-state.bin"));
-        self.qmp.execute(
-            "migrate",
-            Some(json!({
-                "uri": format!("exec:cat > {}", state_file.to_string_lossy()),
-            })),
-        )?;
+        let uri = if self.file_migration_supported() {
+            format!("file:{}", state_file.to_string_lossy())
+        } else {
+            format!("exec:cat > {}", state_file.to_string_lossy())
+        };
+        self.qmp.execute("migrate", Some(json!({ "uri": uri })))?;
         self.wait_migration(Duration::from_secs(120))?;
 
         if was_running {
@@ -132,9 +133,7 @@ impl QemuVm {
         }
 
         let mut hasher = DefaultHasher::new();
-        std::fs::read(&state_file)
-            .map_err(HvError::Io)?
-            .hash(&mut hasher);
+        hash_file(&state_file, &mut hasher)?;
         for overlay in &overlays {
             overlay.hash(&mut hasher);
         }
@@ -148,19 +147,24 @@ impl QemuVm {
     /// [`cont`](Self::cont) to start vCPUs — this is the instant-resume
     /// primitive behind `restore`.
     pub fn restore_incoming(&mut self, state_file: &std::path::Path) -> Result<(), HvError> {
-        self.qmp.execute(
-            "migrate-incoming",
-            Some(json!({
-                "uri": format!("exec:cat {}", state_file.to_string_lossy()),
-            })),
-        )?;
+        let uri = if self.file_migration_supported() {
+            format!("file:{}", state_file.to_string_lossy())
+        } else {
+            format!("exec:cat {}", state_file.to_string_lossy())
+        };
+        self.qmp
+            .execute("migrate-incoming", Some(json!({ "uri": uri })))?;
         let deadline = Instant::now() + Duration::from_secs(120);
+        let mut poll = Duration::from_millis(1);
         loop {
             match self.status()?.as_str() {
                 "inmigrate" if Instant::now() > deadline => {
                     return Err(HvError::Engine("incoming state load timed out".into()))
                 }
-                "inmigrate" => std::thread::sleep(Duration::from_millis(100)),
+                "inmigrate" => {
+                    std::thread::sleep(poll);
+                    poll = (poll * 2).min(Duration::from_millis(20));
+                }
                 "internal-error" | "io-error" => {
                     return Err(HvError::Engine("incoming state load failed".into()))
                 }
@@ -169,8 +173,16 @@ impl QemuVm {
         }
     }
 
+    /// Whether this QEMU supports the `file:` migration URI (QEMU >= 8.2,
+    /// https://www.qemu.org/docs/master/devel/migration/main.html), which
+    /// reads/writes state directly instead of piping through `exec:cat`.
+    fn file_migration_supported(&self) -> bool {
+        self.qmp.qemu_version() >= (8, 2)
+    }
+
     fn wait_migration(&mut self, timeout: Duration) -> Result<(), HvError> {
         let deadline = Instant::now() + timeout;
+        let mut poll = Duration::from_millis(1);
         loop {
             let ret = self.qmp.execute("query-migrate", None)?;
             match ret["status"].as_str() {
@@ -181,7 +193,10 @@ impl QemuVm {
                 _ if Instant::now() > deadline => {
                     return Err(HvError::Engine("state migration timed out".into()))
                 }
-                _ => std::thread::sleep(Duration::from_millis(100)),
+                _ => {
+                    std::thread::sleep(poll);
+                    poll = (poll * 2).min(Duration::from_millis(50));
+                }
             }
         }
     }
@@ -203,6 +218,20 @@ impl QemuVm {
         }
         let _ = std::fs::remove_file(&self.qmp_socket);
         Ok(())
+    }
+}
+
+/// Feed a file's contents through `hasher` in fixed-size chunks, avoiding
+/// loading the whole state file (guest RAM sized) into memory at once.
+fn hash_file(path: &std::path::Path, hasher: &mut DefaultHasher) -> Result<(), HvError> {
+    let mut file = std::fs::File::open(path).map_err(HvError::Io)?;
+    let mut buf = vec![0u8; 1 << 20];
+    loop {
+        let n = file.read(&mut buf).map_err(HvError::Io)?;
+        if n == 0 {
+            return Ok(());
+        }
+        hasher.write(&buf[..n]);
     }
 }
 

@@ -1,0 +1,59 @@
+name: Engine benchmarks
+
+# Regression guard for the resume/boot hot paths (docs/engine-benchmarks.md):
+# runs the vmforge-bench harness under TCG (nested-virt friendly, no /dev/kvm
+# needed) and fails if any metric's median regresses >25% vs the committed
+# baseline (bench/engine/baseline.json). Nightly alongside the QA smoke, plus
+# on PRs touching the engine so regressions are caught before merge.
+
+on:
+  schedule:
+    - cron: '30 3 * * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'crates/**'
+      - 'bench/engine/**'
+      - '.github/workflows/engine-bench.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'crates/**'
+      - 'bench/engine/**'
+      - '.github/workflows/engine-bench.yml'
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install QEMU (aarch64 system emulation + qemu-img + edk2)
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q qemu-system-arm qemu-utils qemu-efi-aarch64
+      - name: Build benchmark harness (release)
+        run: cargo build --release -p vmforge-bench
+      - name: Run benchmarks + regression guard (>25% vs committed baseline)
+        env:
+          VMFORGE_BENCH_ACCEL: tcg
+        run: |
+          ./target/release/vmforge-bench \
+            --iterations 5 \
+            --json bench-results.json \
+            --markdown bench-results.md \
+            --baseline bench/engine/baseline.json \
+            --threshold 25
+      - name: Job summary
+        if: always()
+        run: cat bench-results.md >> "$GITHUB_STEP_SUMMARY" || true
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: engine-bench-results
+          path: |
+            bench-results.json
+            bench-results.md

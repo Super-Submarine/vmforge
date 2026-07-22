@@ -1,0 +1,54 @@
+{
+  "accel": "tcg",
+  "iterations": 5,
+  "memory_mib": 256,
+  "metrics": {
+    "boot_ready_ms": {
+      "median_ms": 57.78,
+      "p95_ms": 60.28,
+      "samples_ms": [
+        57.17,
+        57.62,
+        57.78,
+        59.35,
+        60.28
+      ]
+    },
+    "branch_switch_ms": {
+      "median_ms": 62.94,
+      "p95_ms": 66.02,
+      "samples_ms": [
+        60.86,
+        62.44,
+        62.94,
+        63.51,
+        66.02
+      ]
+    },
+    "restore_resume_ms": {
+      "median_ms": 61.98,
+      "p95_ms": 70.34,
+      "samples_ms": [
+        61.01,
+        61.79,
+        61.98,
+        65.84,
+        70.34
+      ]
+    },
+    "snapshot_save_ms": {
+      "median_ms": 41.7,
+      "p95_ms": 45.78,
+      "samples_ms": [
+        26.84,
+        27.34,
+        41.7,
+        43.0,
+        45.78
+      ]
+    }
+  },
+  "qemu": "QEMU emulator version 6.2.0 (Debian 1:6.2+dfsg-2ubuntu6.31)",
+  "schema": "vmforge-engine-bench/1",
+  "timestamp_unix": 1784741420
+}
