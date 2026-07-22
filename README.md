@@ -29,6 +29,20 @@ docs/architecture.md     Design doc: components, state machine, licensing, risks
 
 ## Screenshots
 
+### GUI alpha — VM manager + console
+
+From the GUI alpha (Tauri VM manager + QEMU VNC console, see [PR #7](https://github.com/Super-Submarine/vmforge/pull/7)), running on a Linux/KVM host.
+
+VM manager — VM list with state, resources, snapshots, and lifecycle actions:
+
+![VMForge VM manager](assets/screenshots/vmforge-gui-manager.png)
+
+Console — BookwormPup64 (Debian 12 base) live guest booted under QEMU/KVM, viewed through the VM's VNC display:
+
+![VMForge console running a Linux guest](assets/screenshots/vmforge-gui-console.png)
+
+### CLI
+
 `vmforge info` — active backend and capabilities:
 
 ![vmforge info](assets/screenshots/vmforge-info.png)
