@@ -25,6 +25,8 @@ jobs:
         run: cargo build --workspace --all-targets
       - name: Test
         run: cargo test --workspace
+      - name: Failure-injection tests (error taxonomy)
+        run: cargo test -p vmforge-cli --test failure_injection -- --nocapture
 
   hygiene:
     runs-on: ubuntu-latest

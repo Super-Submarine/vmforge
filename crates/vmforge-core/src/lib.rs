@@ -6,15 +6,18 @@
 //!
 //! See `docs/architecture.md` for the full design.
 
+pub mod doctor;
 pub mod error;
 pub mod snapshot;
 pub mod state;
 pub mod storage;
+pub mod taxonomy;
 pub mod vm;
 
 pub use error::HvError;
 pub use snapshot::{SnapshotId, SnapshotStore};
 pub use state::VmState;
+pub use taxonomy::{EngineError, ErrorClass};
 pub use vm::{VmConfig, VmHandle};
 
 /// Guest instruction-set architecture.
