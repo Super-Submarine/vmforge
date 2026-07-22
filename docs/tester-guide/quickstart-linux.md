@@ -111,6 +111,9 @@ arriving at M1.
 
 ## 6. What to do next
 
-Run your acceptance scripts (AT-1…AT-5 from your welcome email), file anything
-that fails per [Reporting bugs](reporting-bugs.md), and keep rough wall-clock
-timings — the day-3 survey asks for install → first boot time.
+Run your acceptance scripts (AT-1…AT-5 from your welcome email), then the
+post-freeze tasks AT-6 (whole-VM [backup & restore](backup-restore.md)),
+AT-7 (two-VM [networking](networking.md)) and AT-8 (`vmforge diagnose`) from
+the [guide index](README.md#post-freeze-feature-tasks-new--please-exercise-these).
+File anything that fails per [Reporting bugs](reporting-bugs.md), and keep rough
+wall-clock timings — the day-3 survey asks for install → first boot time.
