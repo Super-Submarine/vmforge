@@ -1,0 +1,12 @@
+[Unit]
+Description=VMForge guest agent
+BindsTo=dev-virtio\x2dports-org.vmforge.agent.0.device
+After=dev-virtio\x2dports-org.vmforge.agent.0.device
+
+[Service]
+ExecStart=/usr/local/bin/vmforge-ga.py
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
