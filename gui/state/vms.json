@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "vms": [
+    {
+      "id": "vm-0001",
+      "name": "ubuntu-24.04-dev",
+      "state": "running",
+      "cpus": 4,
+      "memory_mb": 8192,
+      "disk_gb": 64,
+      "disk_path": "~/.vmforge/disks/vm-0001.qcow2",
+      "vnc_display": 1,
+      "snapshots": [
+        {
+          "id": "vm-0001-snap-1",
+          "name": "clean-install",
+          "created_at": "2026-07-20T10:12:00Z"
+        }
+      ]
+    },
+    {
+      "id": "vm-0002",
+      "name": "fedora-42-test",
+      "state": "stopped",
+      "cpus": 2,
+      "memory_mb": 4096,
+      "disk_gb": 32,
+      "disk_path": "~/.vmforge/disks/vm-0002.qcow2",
+      "vnc_display": null,
+      "snapshots": []
+    },
+    {
+      "id": "vm-0003",
+      "name": "alpine-ci-runner",
+      "state": "stopped",
+      "cpus": 1,
+      "memory_mb": 1024,
+      "disk_gb": 8,
+      "disk_path": "~/.vmforge/disks/vm-0003.qcow2",
+      "vnc_display": null,
+      "snapshots": []
+    }
+  ]
+}

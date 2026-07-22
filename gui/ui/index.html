@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VMForge — VM Manager</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">&#x2699;</span>
+      <h1>VMForge</h1>
+      <span class="tag">alpha</span>
+    </div>
+    <button id="btn-create" class="primary" title="One-click create: 2 vCPU / 2 GiB RAM / 20 GiB qcow2, virtio devices">
+      + Create VM
+    </button>
+  </header>
+
+  <main>
+    <table id="vm-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>State</th>
+          <th>vCPUs</th>
+          <th>Memory</th>
+          <th>Disk</th>
+          <th>Snapshots</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="vm-rows"></tbody>
+    </table>
+    <p id="status" class="status"></p>
+  </main>
+
+  <script src="main.js" defer></script>
+</body>
+</html>
