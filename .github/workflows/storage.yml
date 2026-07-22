@@ -3,9 +3,15 @@ name: storage
 on:
   push:
     branches: [main]
-    paths: ["storage/**", ".github/workflows/storage.yml"]
+    paths:
+      - "storage/**"
+      - "crates/vmforge-core/**"
+      - ".github/workflows/storage.yml"
   pull_request:
-    paths: ["storage/**", ".github/workflows/storage.yml"]
+    paths:
+      - "storage/**"
+      - "crates/vmforge-core/**"
+      - ".github/workflows/storage.yml"
 
 jobs:
   test:
@@ -26,3 +32,20 @@ jobs:
         run: ruff check .
       - name: Tests
         run: pytest -v
+
+  engine-integration:
+    name: engine ⟷ storage integration (SubprocessStore, real qcow2)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install qemu-utils (no KVM needed)
+        run: sudo apt-get update && sudo apt-get install -y qemu-utils
+      - name: Install vmforge-storage CLI
+        run: pip install ./storage
+      - name: SubprocessStore integration tests
+        run: cargo test -p vmforge-core --test storage_subprocess -- --nocapture
