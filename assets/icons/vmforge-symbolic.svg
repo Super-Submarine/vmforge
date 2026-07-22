@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  VMForge symbolic icon - single-color variant for GNOME dark panels / trays.
+  One #FFFFFF shape group on transparent; recolorable by the desktop theme.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 512 512">
+  <g fill="none" stroke="#FFFFFF" stroke-width="44" stroke-linecap="round">
+    <path d="M 176 150 L 176 362"/>
+    <path d="M 176 230 C 176 320 344 230 344 320"/>
+  </g>
+  <g fill="#FFFFFF">
+    <circle cx="176" cy="98" r="56"/>
+    <circle cx="176" cy="414" r="56"/>
+    <circle cx="344" cy="376" r="56"/>
+  </g>
+</svg>

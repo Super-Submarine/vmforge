@@ -1,0 +1,9 @@
+{"send": "{\"execute\": \"ping\", \"id\": 1}", "expect": {"return": {}, "id": 1}}
+{"send": "{\"execute\": \"nonexistent-command\", \"id\": 2}", "expect": {"error": {"code": "unknown_command", "message": "unknown command: 'nonexistent-command'", "desc": "unknown command: 'nonexistent-command'"}, "id": 2}}
+{"send": "{\"execute\": \"shutdown\", \"arguments\": {\"mode\": \"hibernate\"}, \"id\": 3}", "expect": {"error": {"code": "invalid_args", "message": "unsupported shutdown mode: hibernate", "desc": "unsupported shutdown mode: hibernate"}, "id": 3}}
+{"send": "{\"execute\": \"exec\", \"arguments\": {\"argv\": []}, \"id\": 4}", "expect": {"error": {"code": "invalid_args", "message": "exec requires argv: non-empty list of strings", "desc": "exec requires argv: non-empty list of strings"}, "id": 4}}
+{"send": "{\"execute\": \"exec\", \"arguments\": {\"argv\": [\"echo\", \"hi\"]}, \"id\": 5}", "expect": {"return": {"exit_code": 0, "stdout": "aGkK", "stderr": "", "stdout_truncated": false, "stderr_truncated": false}, "id": 5}}
+{"send": "{\"execute\": \"exec\", \"arguments\": {\"argv\": [\"/nonexistent/binary\"]}, \"id\": 6}", "expect": {"error": {"code": "exec_not_found", "message": "no such executable: /nonexistent/binary", "desc": "no such executable: /nonexistent/binary"}, "id": 6}}
+{"send": "not valid json", "expect": {"error": {"code": "invalid_request", "message": "Expecting value: line 1 column 1 (char 0)", "desc": "Expecting value: line 1 column 1 (char 0)"}}}
+{"send": "[1, 2, 3]", "expect": {"error": {"code": "invalid_request", "message": "request must be a JSON object", "desc": "request must be a JSON object"}}}
+{"send": "{\"execute\": \"guest-ping\", \"id\": 7}", "expect": {"return": {}, "id": 7}}

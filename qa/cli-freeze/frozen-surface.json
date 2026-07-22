@@ -1,0 +1,30 @@
+{
+  "freeze": "v1.0-beta",
+  "doc": "docs/cli-freeze-v1.0-beta.md",
+  "vmforge": {
+    "verbs": ["info"],
+    "exit_codes": {
+      "success": 0,
+      "no_backend": 1,
+      "unknown_command": 2
+    }
+  },
+  "vmforge_storage": {
+    "global_flags": ["--home", "--json", "--contract-version"],
+    "contract_version": "1",
+    "verbs": {
+      "create": {"positionals": ["vm", "disk", "size"], "flags": ["--preallocation", "--cluster-size"]},
+      "resize": {"positionals": ["vm", "disk", "size"], "flags": ["--shrink"]},
+      "import": {"positionals": ["src"], "flags": ["--name", "--vm", "--disk", "--format", "--compress"]},
+      "clone": {"positionals": ["base", "vm", "disk"], "flags": ["--size"]},
+      "delete": {"positionals": ["vm", "disk"], "flags": ["--force"]},
+      "info": {"positionals": ["vm", "disk"], "flags": []},
+      "check": {"positionals": ["vm", "disk"], "flags": ["--repair"]},
+      "tree": {"positionals": ["vm", "disk"], "flags": []},
+      "snapshot create": {"positionals": ["vm", "disk", "name"], "flags": []},
+      "snapshot list": {"positionals": ["vm", "disk"], "flags": []},
+      "snapshot revert": {"positionals": ["vm", "disk", "name"], "flags": []},
+      "snapshot delete": {"positionals": ["vm", "disk", "name"], "flags": []}
+    }
+  }
+}
