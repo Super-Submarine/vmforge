@@ -9,6 +9,7 @@
 pub mod error;
 pub mod snapshot;
 pub mod state;
+pub mod storage;
 pub mod vm;
 
 pub use error::HvError;

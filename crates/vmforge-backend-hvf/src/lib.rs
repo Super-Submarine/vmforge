@@ -37,6 +37,8 @@ const BACKEND: &str = "hvf";
 struct SnapshotArtifacts {
     disk_bases: Vec<PathBuf>,
     state_file: PathBuf,
+    /// Lineage edge in the snapshot DAG; not consulted on restore yet.
+    #[allow(dead_code)]
     parent: Option<SnapshotId>,
 }
 
