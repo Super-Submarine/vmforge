@@ -1,0 +1,10 @@
+{
+  "netdev_id": "vmforge-nat0",
+  "model": "virtio-net-pci",
+  "mac": "52:54:00:12:34:56",
+  "net": "10.0.2.0/24",
+  "forwards": [
+    { "proto": "tcp", "host_ip": "127.0.0.1", "host_port": 8080, "guest_port": 8000 },
+    { "proto": "tcp", "host_ip": "127.0.0.1", "host_port": 2222, "guest_port": 22 }
+  ]
+}

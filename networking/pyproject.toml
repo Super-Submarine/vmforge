@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vmforge-net"
+version = "0.1.0"
+description = "VMForge networking v0: user-mode NAT backend for QEMU (args generation + QMP hostfwd hot-add)"
+requires-python = ">=3.10"
+license = { text = "Proprietary" }
+
+[project.scripts]
+vmforge-net = "vmforge_net.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["vmforge_net*"]
