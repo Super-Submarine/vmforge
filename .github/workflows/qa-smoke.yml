@@ -3,9 +3,7 @@ name: QA smoke
 on:
   push:
     branches: [main]
-    paths: ['qa/**', '.github/workflows/qa-smoke.yml']
   pull_request:
-    paths: ['qa/**', '.github/workflows/qa-smoke.yml']
   workflow_dispatch:
 
 jobs:
