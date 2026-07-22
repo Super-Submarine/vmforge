@@ -26,6 +26,17 @@ jobs:
       - name: Test
         run: cargo test --workspace
 
+  cli-freeze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build vmforge CLI
+        run: cargo build -p vmforge-cli
+      - name: Check frozen CLI surface (docs/cli-freeze-v1.0-beta.md)
+        run: python3 qa/cli-freeze/check.py
+
   hygiene:
     runs-on: ubuntu-latest
     steps:
