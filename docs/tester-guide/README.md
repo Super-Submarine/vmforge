@@ -1,18 +1,23 @@
-# VMForge Beta Tester Guide (v1 — wave 1, Linux)
+# VMForge Beta Tester Guide (wave 1, Linux)
 
 Welcome to the VMForge private beta. Wave 1 is **Linux/KVM only** (macOS/Apple Silicon
 testers join in wave 2, gated on HVF snapshot parity).
 
 Start here, in order:
 
-1. **[Linux quickstart](quickstart-linux.md)** — install prerequisites, verify KVM,
+1. **[Installing VMForge on Linux](install-linux.md)** — packaged `.deb`/`.AppImage`
+   installs, including GPG signature verification.
+2. **[Linux quickstart](quickstart-linux.md)** — install prerequisites, verify KVM,
    create/boot/snapshot/restore your first VM, with expected timings.
-2. **[CLI reference](cli-reference.md)** — every `vmforge` command and flag, verified
-   against `main`.
-3. **[Troubleshooting & FAQ](troubleshooting.md)** — the top failure modes (KVM
+3. **[CLI reference](cli-reference.md)** — the complete frozen wave-1 surface
+   (`vmforge`, `vmforge-storage`, smoke suite): every command, flag, and exit code,
+   verified against the code.
+4. **[Working with snapshot trees](snapshot-trees.md)** — git-like snapshots:
+   create, branch, revert, and delete with `vmforge-storage`.
+5. **[Troubleshooting & FAQ](troubleshooting.md)** — the top failure modes (KVM
    permissions, qcow2 disk issues, networking) with diagnose/fix recipes and how each
    maps to our P1/P2/P3 triage severity.
-4. **[Reporting bugs](reporting-bugs.md)** — how to file issues, which template to
+6. **[Reporting bugs](reporting-bugs.md)** — how to file issues, which template to
    use, and the minimal diagnostics output to attach.
 
 ## Severity rubric (used everywhere in this guide)

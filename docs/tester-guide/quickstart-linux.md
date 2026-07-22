@@ -1,7 +1,12 @@
 # Linux Quickstart — first VM in ~10 minutes
 
-Everything below is copy-pasteable and verified against `main`. Target: fresh
-checkout → booted VM → snapshot → restore.
+Everything below is copy-pasteable, verified against `main`, and uses only
+commands frozen for the wave-1 beta (see the [CLI reference](cli-reference.md)).
+Target: fresh checkout → booted VM → snapshot → restore.
+
+> Installing from a packaged release (`.deb`/`.AppImage`) instead of building
+> from source? See [Installing VMForge on Linux](install-linux.md), then
+> rejoin at step 2.
 
 ## 1. Prerequisites
 
@@ -93,21 +98,30 @@ FORCE_TCG=1 qa/smoke/smoke_test.sh    # force TCG even when KVM is available
 GUEST_IMAGE_URL=<url> qa/smoke/smoke_test.sh   # any NoCloud-compatible qcow2 cloud image
 ```
 
-## 5. Snapshot / restore by hand (what the suite does underneath)
+## 5. Manage disks & snapshot trees with `vmforge-storage`
 
-Disks are qcow2 with copy-on-write overlays; live snapshots capture RAM +
-device state + disk in one tag:
+Offline disk and snapshot-tree management ships today as the `vmforge-storage`
+CLI (stable under the wave-1 CLI freeze). Install it once:
 
 ```sh
-cd qa/smoke/.work
-qemu-img create -f qcow2 -b nocloud_alpine-3.20.3-x86_64-bios-cloudinit-r0.qcow2 -F qcow2 mydisk.qcow2
-qemu-img snapshot -l mydisk.qcow2     # list snapshot tags on a disk
-qemu-img check mydisk.qcow2           # verify disk integrity
+cd storage && pip install -e .        # requires qemu-utils (already installed in step 1)
 ```
 
+Then (VM powered off):
+
+```sh
+vmforge-storage create dev root 10G                    # new qcow2 disk under ~/.vmforge
+vmforge-storage snapshot create dev root clean-install # freeze current state
+vmforge-storage snapshot list dev root                 # render the tree; * = current
+vmforge-storage snapshot revert dev root clean-install # branch back to any snapshot
+vmforge-storage check dev root                         # verify disk integrity
+```
+
+Full walkthrough incl. branching: [Working with snapshot trees](snapshot-trees.md).
+
 Lifecycle verbs (`vmforge create/start/snapshot/restore/stop`) land with the M1
-merge — see the [CLI reference](cli-reference.md) for what is shipped today vs.
-arriving at M1.
+merge — see the [CLI reference](cli-reference.md) for what is stable today vs.
+experimental.
 
 ## 6. What to do next
 
