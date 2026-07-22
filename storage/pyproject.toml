@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vmforge-storage"
+version = "0.1.0"
+description = "VMForge storage v0: qcow2 disk & snapshot-tree management (wraps qemu-img)"
+requires-python = ">=3.10"
+
+[project.scripts]
+vmforge-storage = "vmforge_storage.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "ruff>=0.4"]
+
+[tool.setuptools.packages.find]
+include = ["vmforge_storage*"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

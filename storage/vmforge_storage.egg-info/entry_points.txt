@@ -1,0 +1,2 @@
+[console_scripts]
+vmforge-storage = vmforge_storage.cli:main

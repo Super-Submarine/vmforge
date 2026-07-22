@@ -1,0 +1,15 @@
+README.md
+pyproject.toml
+tests/test_cli.py
+tests/test_disks.py
+tests/test_snapshots.py
+vmforge_storage/__init__.py
+vmforge_storage/cli.py
+vmforge_storage/qemu_img.py
+vmforge_storage/store.py
+vmforge_storage.egg-info/PKG-INFO
+vmforge_storage.egg-info/SOURCES.txt
+vmforge_storage.egg-info/dependency_links.txt
+vmforge_storage.egg-info/entry_points.txt
+vmforge_storage.egg-info/requires.txt
+vmforge_storage.egg-info/top_level.txt
