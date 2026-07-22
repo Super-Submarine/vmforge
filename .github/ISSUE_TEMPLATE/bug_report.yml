@@ -1,53 +1,92 @@
-name: Bug report
-description: Something broke — a crash, a failed command, wrong behavior, or a restore/snapshot problem.
-title: "[bug]: "
-labels: ["bug", "beta-feedback"]
+name: Beta bug report
+description: Report a bug found while testing the VMForge beta. Every UAT/AT FAIL should be filed with its step ID.
+title: "[Bug]: "
+labels: ["bug", "beta", "needs-triage"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for filing a bug. GitHub Issues is the system of record for the beta — anything actionable you report in chat gets promoted here within 24h, but filing directly is faster.
-        **Restore failures, data loss, running-VM crashes, or broken installs are always P1** — file them immediately, even if incomplete.
-  - type: dropdown
-    id: severity
+        Thanks for testing VMForge! Fill in as much as you can — host details and the step ID
+        let us reproduce quickly. Severity is assigned at daily triage; if you hit **data loss,
+        a snapshot-restore failure, or a crash of a running VM**, say so clearly — those are P1
+        and acknowledged in under 24 hours.
+  - type: input
+    id: version
     attributes:
-      label: How bad is it?
+      label: VMForge version
+      description: Output of `vmforge --version` (or build/tag from your download page).
+      placeholder: vmforge 0.x.y (build abc1234)
+    validations:
+      required: true
+  - type: dropdown
+    id: host-platform
+    attributes:
+      label: Host platform
       options:
-        - "P1 — data loss, snapshot restore failed, running VM crashed, or install is broken"
-        - "P2 — a documented feature doesn't work, but I have a workaround"
-        - "P3 — cosmetic, confusing message, or minor annoyance"
+        - macOS on Apple Silicon (M1/M2/M3/M4)
+        - Linux x86_64 with KVM
+        - Linux ARM64 with KVM
+        - Other (describe below)
+    validations:
+      required: true
+  - type: input
+    id: host-os-version
+    attributes:
+      label: Host OS version
+      placeholder: "macOS 14.5 / Ubuntu 24.04, kernel 6.8"
+    validations:
+      required: true
+  - type: input
+    id: guest
+    attributes:
+      label: Guest OS / image
+      placeholder: "Ubuntu 24.04 server ARM64"
+  - type: input
+    id: step-id
+    attributes:
+      label: UAT/AT step ID (if from a test script)
+      description: e.g. AT-3.2 or UAT-6.1. Every scripted FAIL must carry its step ID.
+      placeholder: AT-4.3
+  - type: dropdown
+    id: impact
+    attributes:
+      label: What happened (impact class)
+      description: Used for triage against the severity ladder (P1/P2/P3).
+      options:
+        - Data loss, snapshot-restore failure, or crash of a running VM (P1 class)
+        - A golden-path step (UAT/AT) fails but I can recover (P2 class)
+        - Paper cut / UX annoyance / cosmetic (P3 class)
+        - Not sure
     validations:
       required: true
   - type: textarea
     id: what-happened
     attributes:
       label: What happened?
-      description: What did you do, what did you expect, what happened instead?
+      description: What did you do, what did you expect, what actually happened?
       placeholder: |
-        1. Ran `vmforge snapshot create dev-vm before-upgrade`
-        2. Expected a new snapshot in `vmforge snapshot list`
-        3. Got exit code 2 and the error below
+        1. Created a VM with `vmforge create ...`
+        2. Took a snapshot, then restored it
+        3. Expected the VM to resume; instead ...
     validations:
       required: true
   - type: textarea
-    id: command
+    id: repro
     attributes:
-      label: Exact command(s) and output
-      description: Paste the command you ran and its full output. Add `--json` output too if available.
+      label: Steps to reproduce
+      description: Exact commands or clicks, minimal case if you can.
       render: shell
-  - type: textarea
-    id: environment
-    attributes:
-      label: Environment
-      description: |
-        Distro + version, kernel (`uname -r`), CPU (`lscpu | grep "Model name"`), KVM status (`ls -l /dev/kvm`), install method (.deb or .AppImage), and VMForge version (`vmforge --version`).
-      placeholder: |
-        Fedora 42, kernel 6.15.3, AMD Ryzen 7 5800X, /dev/kvm present+writable, .deb, vmforge 0.1.0-beta.1
-    validations:
-      required: true
   - type: textarea
     id: diagnostics
     attributes:
-      label: Diagnostics (optional, opt-in)
-      description: If you agreed to run the diagnostics block from the tester guide's reporting-bugs page, paste its output here. VMForge collects no telemetry — this is copy-paste only.
-      render: shell
+      label: Diagnostics output
+      description: >-
+        Paste the output of `vmforge diagnose` (redact anything you consider private —
+        nothing is collected automatically; you control what you attach).
+      render: text
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Crash logs or console output, if any.
+      render: text
