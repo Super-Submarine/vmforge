@@ -1,10 +1,17 @@
 //! `vmforge` CLI: thin driver over the Hypervisor trait.
 //!
-//! Scaffold supports `vmforge info` (show selected backend + capabilities)
-//! and the EXPERIMENTAL `vmforge net` group (user-mode port forwarding).
+//! Supports `vmforge info` (show selected backend + capabilities),
+//! `vmforge diagnose` (host/VM diagnostics bundle for bug reports), and
+//! the EXPERIMENTAL `vmforge net` group (user-mode port forwarding).
 //! Lifecycle subcommands (create/boot/snapshot/...) land with the Phase 1
 //! QEMU engine; the `--forward` flag below is the same flag `create` will
 //! accept per `docs/interface-contracts.md` §4.
+
+mod diagnose;
+mod redact;
+mod tarball;
+
+use std::path::PathBuf;
 
 use vmforge_backend_hvf::HvfBackend;
 use vmforge_backend_kvm::KvmBackend;
@@ -19,6 +26,24 @@ fn select_backend() -> Option<Box<dyn Hypervisor>> {
         Some(Box::new(HvfBackend::new()))
     } else {
         None
+    }
+}
+
+fn cmd_info() -> i32 {
+    match select_backend() {
+        Some(hv) => {
+            let caps = hv.capabilities();
+            println!("backend: {}", hv.name());
+            println!("accelerator: {}", caps.accelerator);
+            println!("accelerated guest archs: {:?}", caps.accelerated_archs);
+            println!("live snapshot: {}", caps.live_snapshot);
+            println!("virtio-gpu 3D: {}", caps.virtio_gpu_3d);
+            0
+        }
+        None => {
+            eprintln!("no hardware-accelerated backend available on this host");
+            1
+        }
     }
 }
 
@@ -137,23 +162,55 @@ fn net_ssh_command(opts: &NetOpts) {
     println!("ssh -p {port} {user}@127.0.0.1");
 }
 
+const DIAGNOSE_USAGE: &str =
+    "usage: vmforge diagnose [--vm <name>] [--output <file[.tar]>] [--home <dir>]
+
+Collects a redacted host/VM diagnostics report for bug reports
+(see docs/diagnose.md for exactly what is collected).
+
+  --vm <name>       only include the named VM
+  --output <file>   write the bundle to <file> instead of stdout;
+                    a .tar suffix produces a tarball with per-VM log excerpts
+  --home <dir>      VMForge home (default: $VMFORGE_HOME or ~/.vmforge)";
+
+fn cmd_diagnose(args: &[String]) -> i32 {
+    let mut opts = diagnose::DiagnoseOptions {
+        home: diagnose::default_home(),
+        vm: None,
+        output: None,
+    };
+    let mut it = args.iter();
+    while let Some(arg) = it.next() {
+        match arg.as_str() {
+            "--vm" | "--output" | "--home" => {
+                let Some(value) = it.next() else {
+                    eprintln!("missing value for {arg}\n{DIAGNOSE_USAGE}");
+                    return 2;
+                };
+                match arg.as_str() {
+                    "--vm" => opts.vm = Some(value.clone()),
+                    "--output" => opts.output = Some(PathBuf::from(value)),
+                    _ => opts.home = PathBuf::from(value),
+                }
+            }
+            "--help" | "-h" => {
+                println!("{DIAGNOSE_USAGE}");
+                return 0;
+            }
+            other => {
+                eprintln!("unknown diagnose option: {other}\n{DIAGNOSE_USAGE}");
+                return 2;
+            }
+        }
+    }
+    diagnose::run(&opts)
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    match args.first().map(String::as_str) {
-        Some("info") | None => match select_backend() {
-            Some(hv) => {
-                let caps = hv.capabilities();
-                println!("backend: {}", hv.name());
-                println!("accelerator: {}", caps.accelerator);
-                println!("accelerated guest archs: {:?}", caps.accelerated_archs);
-                println!("live snapshot: {}", caps.live_snapshot);
-                println!("virtio-gpu 3D: {}", caps.virtio_gpu_3d);
-            }
-            None => {
-                eprintln!("no hardware-accelerated backend available on this host");
-                std::process::exit(1);
-            }
-        },
+    let code = match args.first().map(String::as_str) {
+        Some("info") | None => cmd_info(),
+        Some("diagnose") => cmd_diagnose(&args[1..]),
         Some("net") => {
             eprintln!("note: 'vmforge net' is EXPERIMENTAL and may change before CLI freeze");
             let sub = args.get(1).map(String::as_str);
@@ -163,10 +220,12 @@ fn main() {
                 Some("ssh-command") => net_ssh_command(&opts),
                 _ => die(NET_USAGE, 2),
             }
+            0
         }
         Some(other) => {
-            eprintln!("unknown command: {other} (scaffold supports: info, net [EXPERIMENTAL])");
-            std::process::exit(2);
+            eprintln!("unknown command: {other} (supported: info, diagnose, net [EXPERIMENTAL])");
+            2
         }
-    }
+    };
+    std::process::exit(code);
 }
