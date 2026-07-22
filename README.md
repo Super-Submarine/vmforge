@@ -6,6 +6,24 @@ This repository contains the **hypervisor abstraction layer (HAL)** scaffold fro
 
 **Beta testers:** start with the [tester guide](docs/tester-guide/README.md) (quickstart, CLI reference, troubleshooting, bug reporting).
 
+## Screenshots
+
+### VM Manager (GUI alpha)
+
+![VMForge VM Manager (alpha) — VM list with state, resources, snapshots, and lifecycle actions](docs/screenshots/vmforge-manager.png)
+
+The GUI alpha (Tauri) lives on the [`devin/1784732217-gui-alpha-skeleton`](https://github.com/Super-Submarine/vmforge/tree/devin/1784732217-gui-alpha-skeleton) branch; it lists VMs with state, resources, and snapshot counts, and drives Start/Stop/Snapshot/Console actions.
+
+### VM console (QEMU VNC)
+
+![VM console via QEMU VNC — guest firmware boot screen in TigerVNC](docs/screenshots/vmforge-console.png)
+
+The console viewer spike connects a VNC client to QEMU's `-vnc` display (here: the SeaBIOS/iPXE boot screen of a running guest).
+
+### CLI
+
+![vmforge CLI — `vmforge info` reporting the KVM backend capabilities](docs/screenshots/vmforge-cli.png)
+
 ## Architecture summary
 
 - **Language:** Rust (memory-safe systems code; rust-vmm ecosystem available for a future direct-KVM backend — https://github.com/rust-vmm).
